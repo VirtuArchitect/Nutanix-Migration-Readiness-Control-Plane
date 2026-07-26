@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NMRCP Operations Console</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #5f6b78;
+      --line: #d8dde5;
+      --panel: #f5f7fa;
+      --surface: #ffffff;
+      --nav: #101820;
+      --nav-muted: #a7b3c2;
+      --accent: #1c6b8f;
+      --ready: #1f7a4d;
+      --research: #7b6114;
+      --prepare: #9b4a17;
+      --blocked: #a12828;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--surface);
+    }
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+    }
+    nav {
+      background: var(--nav);
+      color: white;
+      padding: 22px 18px;
+      display: grid;
+      align-content: start;
+      gap: 18px;
+    }
+    nav h1 {
+      font-size: 18px;
+      line-height: 1.25;
+      margin: 0;
+    }
+    nav a {
+      display: block;
+      color: var(--nav-muted);
+      text-decoration: none;
+      padding: 9px 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    nav a:focus, nav a:hover {
+      color: white;
+      background: rgba(255,255,255,.1);
+      outline: 2px solid transparent;
+    }
+    main {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+    h2, h3, p { margin-top: 0; }
+    h2 { font-size: 19px; margin-bottom: 12px; }
+    h3 { font-size: 15px; margin-bottom: 8px; }
+    .content {
+      padding: 22px 24px 32px;
+      display: grid;
+      gap: 22px;
+      align-content: start;
+    }
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+    }
+    .metric, .connection, .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: white;
+    }
+    .metric { padding: 12px; }
+    .metric strong { display: block; font-size: 24px; line-height: 1.1; }
+    .muted, label, .meta, th, .hint { color: var(--muted); }
+    .connections {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 12px;
+    }
+    .connection {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+      min-height: 228px;
+    }
+    label { display: grid; gap: 5px; font-size: 12px; font-weight: 700; }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 9px 10px;
+      font: inherit;
+      background: white;
+      color: var(--ink);
+    }
+    textarea { min-height: 88px; resize: vertical; }
+    button {
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent);
+      color: white;
+      padding: 9px 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: white;
+      color: var(--accent);
+    }
+    button:focus, input:focus, select:focus, textarea:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .workbench {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      gap: 14px;
+    }
+    .panel { padding: 14px; }
+    .filters {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(120px, 180px));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: auto;
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    th, td {
+      padding: 10px 11px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
+    tr:last-child td { border-bottom: 0; }
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 3px 8px;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+    .ready { background: var(--ready); }
+    .research { background: var(--research); }
+    .prepare { background: var(--prepare); }
+    .blocked { background: var(--blocked); }
+    .steps {
+      display: grid;
+      gap: 8px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .steps li {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: var(--panel);
+    }
+    @media (max-width: 960px) {
+      .shell, .workbench { display: block; }
+      .content { padding: 18px; }
+      .filters { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav aria-label="Primary">
+      <h1>Nutanix Migration Readiness Operations Console</h1>
+      <div>
+        <a href="#connect">Connect Environments</a>
+        <a href="#analyze">Run Compatibility Analysis</a>
+        <a href="#plan">Build Move Plan</a>
+        <a href="#workbench">Operator Workbench</a>
+      </div>
+      <p class="hint">Environment connections are local-only and require explicit operator approval.</p>
+    </nav>
+    <main>
+      <header>
+        <div>
+          <h2>Nutanix Migration Readiness Operations Console</h2>
+          <p class="muted">Move-style guided assessment console for source discovery, compatibility analysis, wave planning, and evidence review.</p>
+        </div>
+        <button type="button" class="secondary" id="copy-command">Copy Run Command</button>
+      </header>
+      <section class="content">
+        <section class="status-strip" aria-label="Readiness summary">
+          <div class="metric"><strong>3</strong><span>Workloads</span></div>
+          <div class="metric"><strong>1</strong><span>Ready</span></div>
+          <div class="metric"><strong>0</strong><span>Research</span></div>
+          <div class="metric"><strong>0</strong><span>Prepare</span></div>
+          <div class="metric"><strong>2</strong><span>Blocked</span></div>
+          <div class="metric"><strong>2</strong><span>Waves</span></div>
+        </section>
+        <section id="connect">
+          <h2>Connect Environments</h2>
+          <div class="connections">
+            
+      <article class="connection">
+        <h3>vCenter</h3>
+        <p class="muted">Read-only VM, network, guest, tools, snapshot, and dependency source.</p>
+        <label>Endpoint<input type="text" autocomplete="off" placeholder="Enter approved endpoint"></label>
+        <label>Mode<select><option>Read-only validation</option><option>Offline import</option><option>Approved lab proof</option></select></label>
+        <button type="button" data-connect="vcenter">Connect</button>
+        <p class="meta">Status: <span data-status>Not configured</span></p>
+      </article>
+    
+            
+      <article class="connection">
+        <h3>Prism Central</h3>
+        <p class="muted">Read-only AHV/NC2 target inventory, capacity, categories, and collision checks.</p>
+        <label>Endpoint<input type="text" autocomplete="off" placeholder="Enter approved endpoint"></label>
+        <label>Mode<select><option>Read-only validation</option><option>Offline import</option><option>Approved lab proof</option></select></label>
+        <button type="button" data-connect="prism">Connect</button>
+        <p class="meta">Status: <span data-status>Not configured</span></p>
+      </article>
+    
+            
+      <article class="connection">
+        <h3>Nutanix Move</h3>
+        <p class="muted">Approved lab-only payload review and dry-run proof capture.</p>
+        <label>Endpoint<input type="text" autocomplete="off" placeholder="Enter approved endpoint"></label>
+        <label>Mode<select><option>Read-only validation</option><option>Offline import</option><option>Approved lab proof</option></select></label>
+        <button type="button" data-connect="move">Connect</button>
+        <p class="meta">Status: <span data-status>Not configured</span></p>
+      </article>
+    
+            
+      <article class="connection">
+        <h3>RVTools / Import</h3>
+        <p class="muted">Offline CSV/JSON intake for discovery when live endpoints are not approved.</p>
+        <label>Endpoint<input type="text" autocomplete="off" placeholder="Enter approved endpoint"></label>
+        <label>Mode<select><option>Read-only validation</option><option>Offline import</option><option>Approved lab proof</option></select></label>
+        <button type="button" data-connect="import">Connect</button>
+        <p class="meta">Status: <span data-status>Not configured</span></p>
+      </article>
+    
+          </div>
+        </section>
+        <section id="analyze" class="workbench">
+          <div class="panel">
+            <h2>Run Compatibility Analysis</h2>
+            <div class="filters" aria-label="Workload filters">
+              <label>Search<input id="search" type="search" placeholder="Workload, owner, finding"></label>
+              <label>Readiness<select id="readiness-filter"><option value="">All states</option><option>ready</option><option>research</option><option>prepare</option><option>blocked</option></select></label>
+              <label>Wave<select id="wave-filter"><option value="">All waves</option></select></label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Workload</th><th>Readiness</th><th>Risk</th><th>Wave</th><th>Move action</th><th>Top finding</th></tr>
+                </thead>
+                <tbody id="workload-rows"><tr data-readiness="ready" data-wave="Wave 0 - Pilot Ready"><td><strong>pilot-web-01</strong><br><span class="muted">Platform Team</span></td><td><span class="pill ready">ready</span></td><td>0</td><td>Wave 0 - Pilot Ready</td><td>stage after review</td><td>No open finding</td></tr>
+<tr data-readiness="blocked" data-wave="Excluded Until Cleared"><td><strong>erp-app-01</strong><br><span class="muted">Business Apps</span></td><td><span class="pill blocked">blocked</span></td><td>80</td><td>Excluded Until Cleared</td><td>hold until remediated</td><td>Workload uses a VMware distributed switch backed port group.</td></tr>
+<tr data-readiness="blocked" data-wave="Excluded Until Cleared"><td><strong>payments-edge-01</strong><br><span class="muted">Payments</span></td><td><span class="pill blocked">blocked</span></td><td>100</td><td>Excluded Until Cleared</td><td>hold until remediated</td><td>Guest OS is not in the current known-good family list.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <aside class="panel" id="workbench">
+            <h2>Operator Workbench</h2>
+            <ol class="steps">
+              <li><strong>1. Connect source</strong><br><span class="muted">Validate vCenter and Prism Central with read-only proof.</span></li>
+              <li><strong>2. Discover inventory</strong><br><span class="muted">Collect or import source workload, network, storage, and ownership data.</span></li>
+              <li><strong>3. Analyze compatibility</strong><br><span class="muted">Review AHV/NC2 readiness, dependencies, blockers, and what-will-break evidence.</span></li>
+              <li id="plan"><strong>4. Build Move Plan</strong><br><span class="muted">Stage only ready/research workloads into the Move plan after review.</span></li>
+            </ol>
+            <h3>Generated local command</h3>
+            <textarea id="run-command" spellcheck="false">python -m nmrcp.cli run-assessment --inventory examples/sample_inventory.json --metadata examples/sample_metadata.csv --dependencies examples/sample_dependencies.csv --move-config examples/sample_move_payload_config.json --out outputs/assessment</textarea>
+            <p class="hint">Do not store credentials in the console or generated artifacts. Use approved read-only collection before claiming endpoint proof. Use approved Nutanix Move lab evidence before external handoff.</p>
+          </aside>
+        </section>
+      </section>
+    </main>
+  </div>
+  <script id="operations-console-data" type="application/json">{&quot;schema_version&quot;:&quot;nmrcp_operations_console_v1&quot;,&quot;summary&quot;:{&quot;ready&quot;:1,&quot;research&quot;:0,&quot;prepare&quot;:0,&quot;blocked&quot;:2,&quot;total&quot;:3},&quot;connections&quot;:[{&quot;id&quot;:&quot;vcenter&quot;,&quot;label&quot;:&quot;vCenter&quot;,&quot;mode&quot;:&quot;read-only&quot;,&quot;status&quot;:&quot;not_configured&quot;},{&quot;id&quot;:&quot;prism&quot;,&quot;label&quot;:&quot;Prism Central&quot;,&quot;mode&quot;:&quot;read-only&quot;,&quot;status&quot;:&quot;not_configured&quot;},{&quot;id&quot;:&quot;move&quot;,&quot;label&quot;:&quot;Nutanix Move&quot;,&quot;mode&quot;:&quot;approved_lab_only&quot;,&quot;status&quot;:&quot;proof_required&quot;},{&quot;id&quot;:&quot;import&quot;,&quot;label&quot;:&quot;RVTools / Import&quot;,&quot;mode&quot;:&quot;offline&quot;,&quot;status&quot;:&quot;available&quot;}],&quot;waves&quot;:[{&quot;name&quot;:&quot;Wave 0 - Pilot Ready&quot;,&quot;workload_count&quot;:1},{&quot;name&quot;:&quot;Excluded Until Cleared&quot;,&quot;workload_count&quot;:2}],&quot;workloads&quot;:[{&quot;id&quot;:&quot;vm-1001&quot;,&quot;name&quot;:&quot;pilot-web-01&quot;,&quot;owner&quot;:&quot;Platform Team&quot;,&quot;readiness&quot;:&quot;ready&quot;,&quot;risk_score&quot;:0,&quot;wave&quot;:&quot;Wave 0 - Pilot Ready&quot;,&quot;move_action&quot;:&quot;stage after review&quot;,&quot;top_finding&quot;:&quot;No open finding&quot;},{&quot;id&quot;:&quot;vm-2020&quot;,&quot;name&quot;:&quot;erp-app-01&quot;,&quot;owner&quot;:&quot;Business Apps&quot;,&quot;readiness&quot;:&quot;blocked&quot;,&quot;risk_score&quot;:80,&quot;wave&quot;:&quot;Excluded Until Cleared&quot;,&quot;move_action&quot;:&quot;hold until remediated&quot;,&quot;top_finding&quot;:&quot;Workload uses a VMware distributed switch backed port group.&quot;},{&quot;id&quot;:&quot;vm-3030&quot;,&quot;name&quot;:&quot;payments-edge-01&quot;,&quot;owner&quot;:&quot;Payments&quot;,&quot;readiness&quot;:&quot;blocked&quot;,&quot;risk_score&quot;:100,&quot;wave&quot;:&quot;Excluded Until Cleared&quot;,&quot;move_action&quot;:&quot;hold until remediated&quot;,&quot;top_finding&quot;:&quot;Guest OS is not in the current known-good family list.&quot;}],&quot;source&quot;:{&quot;system&quot;:&quot;sanitized-vcenter-export&quot;,&quot;workloads&quot;:3}}</script>
+  <script>
+    const payload = JSON.parse(document.getElementById("operations-console-data").textContent);
+    const rows = Array.from(document.querySelectorAll("#workload-rows tr"));
+    const waveFilter = document.getElementById("wave-filter");
+    for (const wave of payload.waves) {
+      const option = document.createElement("option");
+      option.value = wave.name;
+      option.textContent = wave.name;
+      waveFilter.appendChild(option);
+    }
+    function applyFilters() {
+      const search = document.getElementById("search").value.toLowerCase();
+      const readiness = document.getElementById("readiness-filter").value;
+      const wave = waveFilter.value;
+      for (const row of rows) {
+        const text = row.textContent.toLowerCase();
+        const visible = (!search || text.includes(search)) &&
+          (!readiness || row.dataset.readiness === readiness) &&
+          (!wave || row.dataset.wave === wave);
+        row.hidden = !visible;
+      }
+    }
+    document.getElementById("search").addEventListener("input", applyFilters);
+    document.getElementById("readiness-filter").addEventListener("change", applyFilters);
+    waveFilter.addEventListener("change", applyFilters);
+    document.querySelectorAll("[data-connect]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = button.closest(".connection").querySelector("[data-status]");
+        target.textContent = "Pending approved local run";
+      });
+    });
+    document.getElementById("copy-command").addEventListener("click", async () => {
+      const command = document.getElementById("run-command").value;
+      try { await navigator.clipboard.writeText(command); } catch (error) { void error; }
+    });
+  </script>
+</body>
+</html>
