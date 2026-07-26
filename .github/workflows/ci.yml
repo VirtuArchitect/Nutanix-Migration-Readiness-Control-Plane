@@ -10,8 +10,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - name: Compile
@@ -84,7 +84,37 @@ jobs:
           python -m nmrcp.cli validate-approval-exception-approvals --exceptions examples/sample_approval_exceptions_approved.csv --assessment outputs/ci-smoke/assessment.json
           python -m nmrcp.cli generate-operator-review --dir outputs/ci-smoke --out outputs/ci-operator-review.template.csv
           python -m nmrcp.cli validate-operator-review --review outputs/ci-operator-review.template.csv --allow-draft
-          python -m nmrcp.cli validate-operator-review --review examples/sample_operator_review_approved.csv
+          python - <<'PY'
+          import csv
+          from pathlib import Path
+          template = Path("outputs/ci-operator-review.template.csv")
+          approved = Path("outputs/ci-operator-review.approved.csv")
+          with template.open("r", encoding="utf-8", newline="") as handle:
+              row = next(csv.DictReader(handle))
+          row.update(
+              {
+                  "review_status": "approved",
+                  "reviewed_by": "CI Lab Reviewer",
+                  "change_reference": "CHG-CI-0001",
+                  "coverage_reviewed": "yes",
+                  "readiness_reviewed": "yes",
+                  "move_plan_reviewed": "yes",
+                  "evidence_reviewed": "yes",
+                  "redaction_reviewed": "yes",
+                  "rollback_reviewed": "yes",
+                  "capacity_reviewed": "yes",
+                  "target_reconciliation_reviewed": "yes",
+                  "network_mapping_reviewed": "yes",
+                  "app_map_reviewed": "yes",
+                  "notes": "CI-approved operator review bound to the generated ci-smoke assessment directory.",
+              }
+          )
+          with approved.open("w", encoding="utf-8", newline="") as handle:
+              writer = csv.DictWriter(handle, fieldnames=row.keys())
+              writer.writeheader()
+              writer.writerow(row)
+          PY
+          python -m nmrcp.cli validate-operator-review --review outputs/ci-operator-review.approved.csv
           python -m nmrcp.cli generate-move-payload --plan outputs/ci-smoke/nutanix-move-plan.csv --config examples/sample_move_payload_config.json --out outputs/ci-smoke/move-api-payload.dry-run.json
           python -m nmrcp.cli generate-move-payload --plan outputs/ci-smoke/nutanix-move-plan.csv --config examples/sample_move_payload_lab_config.json --out outputs/ci-smoke/move-api-payload.lab.dry-run.json
           python -m nmrcp.cli generate-move-lab-proof-template --payload outputs/ci-smoke/move-api-payload.lab.dry-run.json --review examples/sample_move_submit_review.json --proof-scope approved_lab_move_appliance --out outputs/ci-smoke/move-lab-proof.template.json
@@ -182,12 +212,12 @@ jobs:
           python -m nmrcp.cli package-evidence --dir outputs/ci-smoke --out outputs/ci-evidence-bundle.zip
           python -m nmrcp.cli verify-evidence --bundle outputs/ci-evidence-bundle.zip
           python -m nmrcp.cli change-gate --dir outputs/ci-smoke --bundle outputs/ci-evidence-bundle.zip
-          python -m nmrcp.cli change-gate --dir outputs/ci-smoke --bundle outputs/ci-evidence-bundle.zip --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review examples/sample_operator_review_approved.csv --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json
-          python -m nmrcp.cli change-gate --dir outputs/ci-smoke --bundle outputs/ci-evidence-bundle.zip --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review examples/sample_operator_review_approved.csv --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --json > outputs/ci-change-gate-final.json
+          python -m nmrcp.cli change-gate --dir outputs/ci-smoke --bundle outputs/ci-evidence-bundle.zip --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review outputs/ci-operator-review.approved.csv --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json
+          python -m nmrcp.cli change-gate --dir outputs/ci-smoke --bundle outputs/ci-evidence-bundle.zip --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review outputs/ci-operator-review.approved.csv --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --json > outputs/ci-change-gate-final.json
           python -m nmrcp.cli validate-warning-acceptance --acceptance examples/sample_change_gate_warning_acceptance.csv --warnings outputs/ci-change-gate-final.json
-          python -m nmrcp.cli package-handoff --dir outputs/ci-smoke --bundle outputs/ci-evidence-bundle.zip --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review examples/sample_operator_review_approved.csv --move-lab-capture-kit outputs/ci-smoke/move-lab-capture-kit --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --move-lab-readiness-packet outputs/ci-smoke/move-lab-readiness-packet.json --source-collection-plan outputs/ci-source-collection-plan.md --move-payload outputs/ci-smoke/move-api-payload.dry-run.json --out outputs/ci-handoff-package.zip
+          python -m nmrcp.cli package-handoff --dir outputs/ci-smoke --bundle outputs/ci-evidence-bundle.zip --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review outputs/ci-operator-review.approved.csv --move-lab-capture-kit outputs/ci-smoke/move-lab-capture-kit --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --move-lab-readiness-packet outputs/ci-smoke/move-lab-readiness-packet.json --source-collection-plan outputs/ci-source-collection-plan.md --move-payload outputs/ci-smoke/move-api-payload.dry-run.json --out outputs/ci-handoff-package.zip
           python -m nmrcp.cli verify-handoff --package outputs/ci-handoff-package.zip
-          python -m nmrcp.cli mvp-audit --repo-root . --assessment-dir outputs/ci-smoke --live-proof outputs/ci-live-proof-validation.json --evidence-bundle outputs/ci-evidence-bundle.zip --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review examples/sample_operator_review_approved.csv --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --warning-acceptance examples/sample_change_gate_warning_acceptance.csv --out outputs/ci-mvp-audit.json
+          python -m nmrcp.cli mvp-audit --repo-root . --assessment-dir outputs/ci-smoke --live-proof outputs/ci-live-proof-validation.json --evidence-bundle outputs/ci-evidence-bundle.zip --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review outputs/ci-operator-review.approved.csv --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --warning-acceptance examples/sample_change_gate_warning_acceptance.csv --out outputs/ci-mvp-audit.json
           python -m nmrcp.cli validate-operator-gate-summary --summary outputs/ci-smoke/operator-gate-summary.md
           python -m nmrcp.cli external-proof-plan --repo-root . --live-proof outputs/ci-live-proof-validation.json --move-proof outputs/ci-smoke/move-lab-proof-validation.simulated.json --out outputs/ci-external-proof-plan.md --json-out outputs/ci-external-proof-plan.json
           python -m nmrcp.cli validate-external-proof-plan --repo-root . --live-proof outputs/ci-live-proof-validation.json --move-proof outputs/ci-smoke/move-lab-proof-validation.simulated.json --report outputs/ci-external-proof-plan.md --json-report outputs/ci-external-proof-plan.json
@@ -201,7 +231,7 @@ jobs:
           python -m nmrcp.cli validate-launch-readiness-report --package outputs/ci-mvp-proof-package.zip --report outputs/ci-launch-readiness-report.md --json-report outputs/ci-launch-readiness-report.json
           grep -q '"external_handoff_decision": "blocked_for_external_handoff"' outputs/ci-launch-readiness-report.json
           grep -q 'External handoff decision: `blocked_for_external_handoff`' outputs/ci-launch-readiness-report.md
-          python -m nmrcp.cli run-assessment --inventory examples/sample_inventory.json --metadata examples/sample_metadata.csv --dependencies examples/sample_dependencies.csv --capacity examples/sample_target_capacity.json --prism-inventory examples/sample_prism_inventory.json --source-networks outputs/live-collector-smoke/vcenter-networks.json --move-config examples/sample_move_payload_config.json --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review examples/sample_operator_review_approved.csv --move-lab-capture-kit outputs/ci-smoke/move-lab-capture-kit --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --out outputs/ci-workflow
+          python -m nmrcp.cli run-assessment --inventory examples/sample_inventory.json --metadata examples/sample_metadata.csv --dependencies examples/sample_dependencies.csv --capacity examples/sample_target_capacity.json --prism-inventory examples/sample_prism_inventory.json --source-networks outputs/live-collector-smoke/vcenter-networks.json --move-config examples/sample_move_payload_config.json --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review outputs/ci-operator-review.approved.csv --move-lab-capture-kit outputs/ci-smoke/move-lab-capture-kit --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --out outputs/ci-workflow
           test -f outputs/ci-workflow/operator-gate-summary.md
           test -f outputs/ci-workflow-handoff-package.zip
           test -f outputs/ci-mvp-proof-package.zip

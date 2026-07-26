@@ -11,6 +11,8 @@ class GitHubCiTests(unittest.TestCase):
             "validate-github-publication-review",
             "outputs/ci-github-publication-review.md",
             "outputs/ci-github-publication-review.json",
+            "actions/checkout@v5",
+            "actions/setup-python@v6",
             "validate-live-proof",
             "generate-assessment-intake",
             "validate-assessment-intake",
@@ -57,6 +59,7 @@ class GitHubCiTests(unittest.TestCase):
             "outputs/ci-smoke/move-lab-readiness-packet.json",
             "outputs/ci-smoke/move-lab-readiness-packet.md",
             "outputs/live-collector-smoke/collection-proof-report.md",
+            "outputs/ci-operator-review.approved.csv",
         ):
             self.assertIn(expected, workflow)
 
@@ -77,6 +80,9 @@ class GitHubCiTests(unittest.TestCase):
         handoff_command = next(line for line in workflow.splitlines() if "package-handoff --dir outputs/ci-smoke" in line)
         self.assertIn("--move-lab-readiness-packet outputs/ci-smoke/move-lab-readiness-packet.json", handoff_command)
         self.assertIn("--source-collection-plan outputs/ci-source-collection-plan.md", handoff_command)
+        self.assertIn("--operator-review outputs/ci-operator-review.approved.csv", handoff_command)
+
+        self.assertNotIn("--operator-review examples/sample_operator_review_approved.csv", workflow)
 
 
 if __name__ == "__main__":
