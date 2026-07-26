@@ -89,6 +89,7 @@ jobs:
           from pathlib import Path
           template = Path("outputs/ci-operator-review.template.csv")
           approved = Path("outputs/ci-operator-review.approved.csv")
+          workflow_approved = Path("outputs/ci-workflow-operator-review.approved.csv")
           with template.open("r", encoding="utf-8", newline="") as handle:
               row = next(csv.DictReader(handle))
           row.update(
@@ -113,8 +114,16 @@ jobs:
               writer = csv.DictWriter(handle, fieldnames=row.keys())
               writer.writeheader()
               writer.writerow(row)
+          workflow_row = dict(row)
+          workflow_row["assessment_dir"] = "outputs/ci-workflow"
+          workflow_row["notes"] = "CI-approved operator review bound to the generated ci-workflow assessment directory."
+          with workflow_approved.open("w", encoding="utf-8", newline="") as handle:
+              writer = csv.DictWriter(handle, fieldnames=workflow_row.keys())
+              writer.writeheader()
+              writer.writerow(workflow_row)
           PY
           python -m nmrcp.cli validate-operator-review --review outputs/ci-operator-review.approved.csv
+          python -m nmrcp.cli validate-operator-review --review outputs/ci-workflow-operator-review.approved.csv
           python -m nmrcp.cli generate-move-payload --plan outputs/ci-smoke/nutanix-move-plan.csv --config examples/sample_move_payload_config.json --out outputs/ci-smoke/move-api-payload.dry-run.json
           python -m nmrcp.cli generate-move-payload --plan outputs/ci-smoke/nutanix-move-plan.csv --config examples/sample_move_payload_lab_config.json --out outputs/ci-smoke/move-api-payload.lab.dry-run.json
           python -m nmrcp.cli generate-move-lab-proof-template --payload outputs/ci-smoke/move-api-payload.lab.dry-run.json --review examples/sample_move_submit_review.json --proof-scope approved_lab_move_appliance --out outputs/ci-smoke/move-lab-proof.template.json
@@ -232,7 +241,7 @@ jobs:
           python -m nmrcp.cli validate-launch-readiness-report --package outputs/ci-mvp-proof-package.zip --report outputs/ci-launch-readiness-report.md --json-report outputs/ci-launch-readiness-report.json
           grep -q '"external_handoff_decision": "blocked_for_external_handoff"' outputs/ci-launch-readiness-report.json
           grep -q 'External handoff decision: `blocked_for_external_handoff`' outputs/ci-launch-readiness-report.md
-          python -m nmrcp.cli run-assessment --inventory examples/sample_inventory.json --metadata examples/sample_metadata.csv --dependencies examples/sample_dependencies.csv --capacity examples/sample_target_capacity.json --prism-inventory examples/sample_prism_inventory.json --source-networks outputs/live-collector-smoke/vcenter-networks.json --move-config examples/sample_move_payload_config.json --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review outputs/ci-operator-review.approved.csv --move-lab-capture-kit outputs/ci-smoke/move-lab-capture-kit --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --out outputs/ci-workflow
+          python -m nmrcp.cli run-assessment --inventory examples/sample_inventory.json --metadata examples/sample_metadata.csv --dependencies examples/sample_dependencies.csv --capacity examples/sample_target_capacity.json --prism-inventory examples/sample_prism_inventory.json --source-networks outputs/live-collector-smoke/vcenter-networks.json --move-config examples/sample_move_payload_config.json --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review outputs/ci-workflow-operator-review.approved.csv --move-lab-capture-kit outputs/ci-smoke/move-lab-capture-kit --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --out outputs/ci-workflow
           test -f outputs/ci-workflow/operator-gate-summary.md
           test -f outputs/ci-workflow-handoff-package.zip
           test -f outputs/ci-mvp-proof-package.zip

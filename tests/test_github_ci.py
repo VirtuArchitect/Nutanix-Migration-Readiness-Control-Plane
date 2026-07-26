@@ -61,6 +61,7 @@ class GitHubCiTests(unittest.TestCase):
             "outputs/ci-smoke/move-lab-readiness-packet.md",
             "outputs/live-collector-smoke/collection-proof-report.md",
             "outputs/ci-operator-review.approved.csv",
+            "outputs/ci-workflow-operator-review.approved.csv",
         ):
             self.assertIn(expected, workflow)
 
@@ -84,6 +85,8 @@ class GitHubCiTests(unittest.TestCase):
         self.assertIn("--operator-review outputs/ci-operator-review.approved.csv", handoff_command)
 
         self.assertNotIn("--operator-review examples/sample_operator_review_approved.csv", workflow)
+        workflow_command = next(line for line in workflow.splitlines() if "run-assessment --inventory examples/sample_inventory.json" in line)
+        self.assertIn("--operator-review outputs/ci-workflow-operator-review.approved.csv", workflow_command)
 
 
 if __name__ == "__main__":
