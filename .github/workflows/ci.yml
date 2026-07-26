@@ -69,8 +69,10 @@ jobs:
               "Test Read-only Connections",
               "Collect Source Evidence",
               "Run Readiness Assessment",
+              "Prepare Tester Report",
               "font-family: Consolas",
               "/api/run-readiness",
+              "/api/tester-report",
           ):
               assert expected in html, expected
 

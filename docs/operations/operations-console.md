@@ -21,6 +21,9 @@ When served with `nmrcp serve`, the console also exposes a tester workflow:
 - **Run Readiness Assessment** posts to `/api/run-readiness`, scores collected
   inventory when available, writes assessment artifacts, and refreshes the
   served operations console.
+- **Prepare Tester Report** posts to `/api/tester-report`, summarizes the local
+  redacted connection, collection, and readiness artifacts, and writes
+  `tester-report.md` plus `tester-report.json` for GitHub tester feedback.
 
 The console does not persist credentials. Live vCenter/Prism proof and approved
 Nutanix Move lab evidence remain explicit gates; Nutanix Move connection and

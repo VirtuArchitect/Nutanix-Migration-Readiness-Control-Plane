@@ -34,7 +34,9 @@ Then run the browser workflow:
 2. Select **Test Read-only Connections**.
 3. Select **Collect Source Evidence** after the connection proof passes.
 4. Select **Run Readiness Assessment** to score the collected inventory.
-5. Review blocked workloads, findings, waves, and generated evidence paths.
+5. Select **Prepare Tester Report** to summarize the local redacted artifacts
+   for GitHub feedback.
+6. Review blocked workloads, findings, waves, and generated evidence paths.
 
 The container writes runtime artifacts under the Compose-mounted `data`
 directory. The main files testers should inspect are:
@@ -45,6 +47,8 @@ directory. The main files testers should inspect are:
 - `assessment/assessment.json`
 - `assessment/evidence-manifest.json`
 - `assessment/operations-console.html`
+- `tester-report.md`
+- `tester-report.json`
 
 ## Python Path
 
@@ -64,6 +68,19 @@ http://localhost:8080/
 The same tester workflow applies. Runtime artifacts are written under the local
 console data directory and assessment output directory.
 
+To prepare the same report from the CLI:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m nmrcp.cli tester-report `
+  --data-dir outputs\console-site\data `
+  --out outputs\tester-report.md `
+  --json-out outputs\tester-report.json
+```
+
+The command returns success only when the expected connection proof, source
+collection proof, and readiness assessment artifacts are present and passing.
+
 ## What To Report
 
 Open a **Tester Connection Report** issue and include:
@@ -74,6 +91,7 @@ Open a **Tester Connection Report** issue and include:
 - Whether connection proof, collection, and readiness assessment passed.
 - Counts from redacted summaries: workload count, ready count, blocked count,
   and top blocker categories.
+- `tester-report.md` or redacted snippets from `tester-report.json`.
 - Redacted snippets from proof or assessment files when they explain the issue.
 
 Do not attach raw credentials, screenshots showing endpoint values, customer

@@ -66,7 +66,9 @@ class GitHubCiTests(unittest.TestCase):
             "docker build -t nmrcp-console:ci .",
             "docker run --rm -d --name nmrcp-console-ci -p 18080:8080 nmrcp-console:ci",
             "/api/run-readiness",
+            "/api/tester-report",
             "Test Read-only Connections",
+            "Prepare Tester Report",
             "font-family: Consolas",
         ):
             self.assertIn(expected, workflow)

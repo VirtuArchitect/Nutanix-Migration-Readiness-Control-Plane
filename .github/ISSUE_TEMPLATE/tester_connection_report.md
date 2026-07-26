@@ -54,4 +54,6 @@ Describe what happened and paste only redacted proof snippets.
 - [ ] `collection-proof-report.md`
 - [ ] `assessment.json`
 - [ ] `evidence-manifest.json`
+- [ ] `tester-report.md`
+- [ ] `tester-report.json`
 - [ ] Other redacted artifact:

@@ -8,7 +8,7 @@ from unittest.mock import patch
 from http.server import ThreadingHTTPServer
 from urllib.request import Request
 
-from nmrcp.server import ConsoleRequestHandler, api_run_readiness, safe_inventory_path
+from nmrcp.server import ConsoleRequestHandler, api_run_readiness, api_tester_report, safe_inventory_path
 
 from nmrcp.cli import main
 from nmrcp.server import prepare_console_site
@@ -115,6 +115,32 @@ class ConsoleServerTests(unittest.TestCase):
             self.assertEqual(payload["status"], "pass")
             self.assertTrue((data_dir / "assessment" / "assessment.json").exists())
             self.assertTrue((site_dir / "operations-console.html").exists())
+            self.assertEqual(payload["summary"]["workloads"], 3)
+
+    def test_tester_report_api_writes_local_feedback_report(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data_dir = root / "data"
+            site_dir = root / "site"
+            site_dir.mkdir()
+            api_run_readiness({}, data_dir, site_dir)
+            (data_dir / "live-readiness.json").write_text(
+                json.dumps({"schema_version": "nmrcp_live_readiness_v1", "status": "pass"}),
+                encoding="utf-8",
+            )
+            source_dir = data_dir / "source-collection"
+            source_dir.mkdir()
+            (source_dir / "collection-summary.json").write_text(
+                json.dumps({"schema_version": "nmrcp_collection_summary_v1", "status": "pass"}),
+                encoding="utf-8",
+            )
+            (source_dir / "collection-proof-report.md").write_text("# Redacted proof\n", encoding="utf-8")
+
+            payload = api_tester_report(data_dir)
+
+            self.assertEqual(payload["status"], "ready_for_tester_feedback")
+            self.assertTrue((data_dir / "tester-report.md").exists())
+            self.assertTrue((data_dir / "tester-report.json").exists())
             self.assertEqual(payload["summary"]["workloads"], 3)
 
     def test_inventory_path_is_limited_to_repo_or_console_data(self):

@@ -29,6 +29,9 @@ Tester workflow:
 4. Select **Run Readiness Assessment** to score the collected inventory through
    `/api/run-readiness` and refresh the operations console with the tester's
    readiness output.
+5. Select **Prepare Tester Report** to run `/api/tester-report` and write local
+   `tester-report.md` and `tester-report.json` files for redacted GitHub
+   feedback.
 
 Health endpoint:
 

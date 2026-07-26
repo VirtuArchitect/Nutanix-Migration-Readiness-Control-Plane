@@ -93,7 +93,9 @@ $scripts = python -c "import sysconfig; print(sysconfig.get_path('scripts', sche
 For external lab testers, start with
 `docs/operations/tester-quickstart.md`. It covers the Docker and Python console
 paths, the expected connection workflow, redaction rules, and what evidence to
-include in a tester connection report.
+include in a tester connection report. After a local console run, testers can
+select **Prepare Tester Report** in the UI or run `tester-report` from the CLI
+to generate a redacted local feedback summary.
 
 Run the full assessment-to-handoff workflow:
 

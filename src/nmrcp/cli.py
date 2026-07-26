@@ -101,6 +101,7 @@ from .target_reconciliation import (
     validate_target_reconciliation_csv,
     write_target_reconciliation_csv,
 )
+from .tester_report import write_tester_report
 from .tools_driver_readiness import validate_tools_driver_readiness
 from .validation_checklist import validate_validation_checklist
 from .validation_results import validate_validation_results, write_validation_template
@@ -659,6 +660,11 @@ def main(argv: list[str] | None = None) -> int:
     serve.add_argument("--site-dir", type=Path, default=Path("outputs/console-site"), help="Writable console site directory")
     serve.add_argument("--inventory", type=Path, default=Path("examples/sample_inventory.json"), help="Inventory JSON used to seed the console")
     serve.add_argument("--generate-only", action="store_true", help="Generate the console site and exit without serving HTTP")
+
+    tester_report = subparsers.add_parser("tester-report", help="Generate a redacted tester feedback report from local console artifacts")
+    tester_report.add_argument("--data-dir", type=Path, default=Path("outputs/console-site/data"), help="Console data directory to summarize")
+    tester_report.add_argument("--out", required=True, type=Path, help="Markdown tester report output path")
+    tester_report.add_argument("--json-out", type=Path, help="Optional JSON tester report output path")
 
     github_readiness = subparsers.add_parser("github-readiness", help="Check local GitHub publication readiness")
     github_readiness.add_argument("--repo-root", type=Path, default=Path.cwd(), help="Repository root to inspect")
@@ -2042,6 +2048,13 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         serve_console(args.site_dir, host=args.host, port=args.port, inventory_path=args.inventory)
         return 0
+    if args.command == "tester-report":
+        report = write_tester_report(args.data_dir, args.out, args.json_out)
+        print(f"Tester report: {args.out}")
+        if args.json_out:
+            print(f"Tester report JSON: {args.json_out}")
+        print(f"Status: {report['status']}")
+        return 0 if report["status"] == "ready_for_tester_feedback" else 1
     if args.command == "mvp-audit":
         result = audit_mvp(
             args.repo_root,

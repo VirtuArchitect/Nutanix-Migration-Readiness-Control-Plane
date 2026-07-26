@@ -12,6 +12,7 @@ from .evidence import write_assessment
 from .live_readiness import run_live_readiness
 from .operations_console import write_operations_console
 from .scoring import assess_inventory
+from .tester_report import write_tester_report
 from .waves import plan_waves
 
 
@@ -45,6 +46,7 @@ def prepare_console_site(
             "/api/connection-test",
             "/api/collect-sources",
             "/api/run-readiness",
+            "/api/tester-report",
         ],
     }
     (site_dir / "site-manifest.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -99,6 +101,9 @@ class ConsoleRequestHandler(SimpleHTTPRequestHandler):
                 return
             if self.path == "/api/run-readiness":
                 self.send_json(api_run_readiness(payload, self.data_dir(), self.site_dir()))
+                return
+            if self.path == "/api/tester-report":
+                self.send_json(api_tester_report(self.data_dir()))
                 return
             self.send_json({"status": "fail", "errors": ["Unknown API endpoint"]}, status=404)
         except ValueError as exc:
@@ -201,6 +206,20 @@ def api_run_readiness(payload: dict[str, Any], data_dir: Path, site_dir: Path) -
             "prepare": sum(1 for item in assessments if item.readiness == "prepare"),
             "blocked": sum(1 for item in assessments if item.readiness == "blocked"),
         },
+    }
+
+
+def api_tester_report(data_dir: Path) -> dict[str, Any]:
+    report_path = data_dir / "tester-report.md"
+    json_path = data_dir / "tester-report.json"
+    report = write_tester_report(data_dir, report_path, json_path)
+    return {
+        "schema_version": "nmrcp_console_tester_report_v1",
+        "status": report["status"],
+        "report": str(report_path),
+        "json_report": str(json_path),
+        "summary": report["summary"],
+        "missing_artifacts": report["missing_artifacts"],
     }
 
 

@@ -327,8 +327,9 @@
               <button type="button" id="test-connections">Test Read-only Connections</button>
               <button type="button" id="collect-sources" class="secondary">Collect Source Evidence</button>
               <button type="button" id="run-readiness" class="secondary">Run Readiness Assessment</button>
+              <button type="button" id="tester-report" class="secondary">Prepare Tester Report</button>
             </div>
-            <p class="hint">These buttons call /api/connection-test, /api/collect-sources, and /api/run-readiness on this local console server. Passwords are sent only to the local process for the active request and are not written to proof files.</p>
+            <p class="hint">These buttons call /api/connection-test, /api/collect-sources, /api/run-readiness, and /api/tester-report on this local console server. Passwords are sent only to the local process for the active request and are not written to proof files.</p>
             <div class="proof" id="api-proof" role="status" aria-live="polite">Ready for tester input. API actions require the local nmrcp serve console. Use secure endpoints unless you are testing against a loopback simulator.</div>
           </div>
         </section>
@@ -358,6 +359,7 @@
               <li><strong>2. Discover inventory</strong><br><span class="muted">Collect or import source workload, network, storage, and ownership data.</span></li>
               <li><strong>3. Analyze compatibility</strong><br><span class="muted">Review AHV/NC2 readiness, dependencies, blockers, and what-will-break evidence.</span></li>
               <li id="plan"><strong>4. Build Move Plan</strong><br><span class="muted">Stage only ready/research workloads into the Move plan after review.</span></li>
+              <li><strong>5. Package tester feedback</strong><br><span class="muted">Prepare a redacted local report for GitHub tester feedback.</span></li>
             </ol>
             <h3>Generated local command</h3>
             <textarea id="run-command" spellcheck="false">python -m nmrcp.cli run-assessment --inventory examples/sample_inventory.json --metadata examples/sample_metadata.csv --dependencies examples/sample_dependencies.csv --move-config examples/sample_move_payload_config.json --out outputs/assessment</textarea>
@@ -455,6 +457,9 @@
     }));
     document.getElementById("run-readiness").addEventListener("click", (event) => runAction(event.currentTarget, async () => {
       await postJson("/api/run-readiness", {use_collected: true});
+    }));
+    document.getElementById("tester-report").addEventListener("click", (event) => runAction(event.currentTarget, async () => {
+      await postJson("/api/tester-report", {});
     }));
     document.getElementById("copy-command").addEventListener("click", async () => {
       const command = document.getElementById("run-command").value;

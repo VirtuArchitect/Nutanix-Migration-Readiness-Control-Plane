@@ -25,6 +25,8 @@ class OperationsConsoleTests(unittest.TestCase):
             self.assertIn("vCenter", console)
             self.assertIn("Prism Central", console)
             self.assertIn("Nutanix Move", console)
+            self.assertIn("Prepare Tester Report", console)
+            self.assertIn("/api/tester-report", console)
             self.assertIn("Run Compatibility Analysis", console)
             self.assertIn("Build Move Plan", console)
             self.assertIn("Do not store credentials", console)
