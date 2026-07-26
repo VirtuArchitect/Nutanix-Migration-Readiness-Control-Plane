@@ -50,6 +50,9 @@ in committed files or baked images; pass approved lab credentials at runtime
 through the console, environment variables, mounted secret files, or an
 operator-controlled secret store.
 
+For the end-to-end external tester workflow and GitHub reporting expectations,
+see [tester-quickstart.md](tester-quickstart.md).
+
 Appliance builds should reuse this container as the inner service and add first
 boot setup, TLS certificate handling, local encrypted credential storage, backup,
 offline update, and explicit no-telemetry defaults around it.

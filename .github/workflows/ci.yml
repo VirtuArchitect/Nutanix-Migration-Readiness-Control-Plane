@@ -27,6 +27,59 @@ jobs:
       - name: Security scan
         run: |
           python scripts/security_scan.py
+      - name: Docker console smoke
+        run: |
+          docker build -t nmrcp-console:ci .
+          docker run --rm -d --name nmrcp-console-ci -p 18080:8080 nmrcp-console:ci
+          trap 'docker stop nmrcp-console-ci >/dev/null 2>&1 || true' EXIT
+          python - <<'PY'
+          import json
+          import time
+          import urllib.request
+
+          base = "http://127.0.0.1:18080"
+
+          def request(path, payload=None):
+              data = None
+              headers = {}
+              if payload is not None:
+                  data = json.dumps(payload).encode("utf-8")
+                  headers["Content-Type"] = "application/json"
+              req = urllib.request.Request(base + path, data=data, headers=headers)
+              with urllib.request.urlopen(req, timeout=5) as response:
+                  body = response.read().decode("utf-8")
+              return response.status, body
+
+          for attempt in range(30):
+              try:
+                  status, body = request("/healthz")
+                  health = json.loads(body)
+                  if status == 200 and health.get("status") == "ok":
+                      break
+              except Exception:
+                  if attempt == 29:
+                      raise
+                  time.sleep(1)
+          else:
+              raise AssertionError("Docker console did not become healthy")
+
+          status, html = request("/operations-console.html")
+          assert status == 200
+          for expected in (
+              "Test Read-only Connections",
+              "Collect Source Evidence",
+              "Run Readiness Assessment",
+              "font-family: Consolas",
+              "/api/run-readiness",
+          ):
+              assert expected in html, expected
+
+          status, body = request("/api/run-readiness", {"use_collected": False})
+          result = json.loads(body)
+          assert status == 200
+          assert result["status"] == "pass"
+          assert result["summary"]["workloads"] == 3
+          PY
       - name: Smoke
         run: |
           export PYTHONPATH=src

@@ -85,6 +85,8 @@ def write_operations_console(
     body {{
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      line-height: 1.4;
       color: var(--ink);
       background: var(--surface);
     }}
@@ -134,8 +136,8 @@ def write_operations_console(
       align-items: center;
     }}
     h2, h3, p {{ margin-top: 0; }}
-    h2 {{ font-size: 19px; margin-bottom: 12px; }}
-    h3 {{ font-size: 15px; margin-bottom: 8px; }}
+    h2 {{ font-size: 17px; line-height: 1.25; margin-bottom: 12px; }}
+    h3 {{ font-size: 13px; line-height: 1.25; margin-bottom: 8px; }}
     .content {{
       padding: 22px 24px 32px;
       display: grid;
@@ -153,7 +155,7 @@ def write_operations_console(
       background: white;
     }}
     .metric {{ padding: 12px; }}
-    .metric strong {{ display: block; font-size: 24px; line-height: 1.1; }}
+    .metric strong {{ display: block; font-size: 22px; line-height: 1.1; }}
     .muted, label, .meta, th, .hint {{ color: var(--muted); }}
     .connections {{
       display: grid;
@@ -167,23 +169,35 @@ def write_operations_console(
       align-content: start;
       min-height: 228px;
     }}
-    label {{ display: grid; gap: 5px; font-size: 12px; font-weight: 700; }}
+    label {{ display: grid; gap: 5px; font-size: 12px; line-height: 1.25; font-weight: 700; }}
     input, select, textarea {{
       width: 100%;
       border: 1px solid var(--line);
       border-radius: 6px;
       padding: 9px 10px;
       font: inherit;
+      font-size: 13px;
+      line-height: 1.3;
       background: white;
       color: var(--ink);
     }}
     textarea {{ min-height: 88px; resize: vertical; }}
+    #run-command {{
+      min-height: 104px;
+      font-family: Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.35;
+      white-space: pre;
+      overflow: auto;
+    }}
     button {{
       border: 1px solid var(--accent);
       border-radius: 6px;
       background: var(--accent);
       color: white;
       padding: 9px 11px;
+      font-size: 13px;
+      line-height: 1.2;
       font-weight: 700;
       cursor: pointer;
     }}
@@ -218,19 +232,21 @@ def write_operations_console(
     }}
     table {{ width: 100%; border-collapse: collapse; min-width: 760px; }}
     th, td {{
-      padding: 10px 11px;
+      padding: 9px 11px;
       border-bottom: 1px solid var(--line);
       text-align: left;
       vertical-align: top;
-      font-size: 13px;
+      font-size: 12.5px;
+      line-height: 1.3;
     }}
     tr:last-child td {{ border-bottom: 0; }}
     .pill {{
       display: inline-block;
       border-radius: 999px;
-      padding: 3px 8px;
+      padding: 4px 7px;
       color: white;
-      font-size: 12px;
+      font-size: 11px;
+      line-height: 1;
       font-weight: 700;
       text-transform: capitalize;
     }}
@@ -250,7 +266,16 @@ def write_operations_console(
       border-radius: 8px;
       padding: 10px;
       background: var(--panel);
+      font-size: 13px;
+      line-height: 1.25;
     }}
+    .steps strong {{
+      display: inline-block;
+      font-size: 13px;
+      line-height: 1.2;
+      margin-bottom: 2px;
+    }}
+    .steps .muted {{ line-height: 1.25; }}
     .actions {{
       display: flex;
       flex-wrap: wrap;

@@ -28,6 +28,11 @@ class OperationsConsoleTests(unittest.TestCase):
             self.assertIn("Run Compatibility Analysis", console)
             self.assertIn("Build Move Plan", console)
             self.assertIn("Do not store credentials", console)
+            self.assertIn("body {\n      margin: 0;\n      font-family: Arial, Helvetica, sans-serif;\n      font-size: 14px;", console)
+            self.assertIn("#run-command", console)
+            self.assertIn('font-family: Consolas, "Liberation Mono", monospace;', console)
+            self.assertIn(".steps strong", console)
+            self.assertIn("font-size: 12.5px;", console)
 
     def test_operations_console_rejects_missing_move_connection(self):
         with tempfile.TemporaryDirectory() as tmp:

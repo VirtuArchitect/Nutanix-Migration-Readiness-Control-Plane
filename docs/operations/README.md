@@ -28,6 +28,11 @@ python -m nmrcp.cli run-assessment `
 
 See [assessment-workflow.md](assessment-workflow.md).
 
+For external lab testers using the UI, start with
+[tester-quickstart.md](tester-quickstart.md). It covers Docker and Python
+console startup, the read-only connection workflow, redaction rules, expected
+runtime artifacts, and the GitHub tester report format.
+
 Before collection or offline import, generate and validate a customer or partner
 assessment intake:
 

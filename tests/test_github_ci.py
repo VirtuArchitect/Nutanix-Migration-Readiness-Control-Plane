@@ -62,6 +62,12 @@ class GitHubCiTests(unittest.TestCase):
             "outputs/live-collector-smoke/collection-proof-report.md",
             "outputs/ci-operator-review.approved.csv",
             "outputs/ci-workflow-operator-review.approved.csv",
+            "Docker console smoke",
+            "docker build -t nmrcp-console:ci .",
+            "docker run --rm -d --name nmrcp-console-ci -p 18080:8080 nmrcp-console:ci",
+            "/api/run-readiness",
+            "Test Read-only Connections",
+            "font-family: Consolas",
         ):
             self.assertIn(expected, workflow)
 

@@ -22,7 +22,8 @@ Then open `http://localhost:8080/`. The container serves the same local-first
 console and health endpoint without contacting infrastructure by itself. In
 served mode, testers can use the browser to test approved read-only vCenter and
 Prism Central connections, collect local source evidence, and run readiness
-against collected inventory. See `docs/operations/docker.md`.
+against collected inventory. See `docs/operations/docker.md` and the
+tester-facing quickstart in `docs/operations/tester-quickstart.md`.
 
 This project is a local-first readiness and evidence layer for teams planning
 VMware-to-Nutanix AHV or NC2 migrations. It does not replace Nutanix Move,
@@ -88,6 +89,11 @@ launch it by absolute path or add that Scripts directory to `PATH`:
 $scripts = python -c "import sysconfig; print(sysconfig.get_path('scripts', scheme='nt_user'))"
 & (Join-Path $scripts 'nmrcp.exe') doctor
 ```
+
+For external lab testers, start with
+`docs/operations/tester-quickstart.md`. It covers the Docker and Python console
+paths, the expected connection workflow, redaction rules, and what evidence to
+include in a tester connection report.
 
 Run the full assessment-to-handoff workflow:
 
