@@ -5,7 +5,7 @@ Know exactly what will break before you migrate from VMware to Nutanix.
 ## Console Demo
 
 Open the static operator console preview:
-[Operations Console Demo](https://htmlpreview.github.io/?https://github.com/VirtuArchitect/Nutanix-Migration-Readiness-Control-Plane/blob/main/docs/demo/operations-console.html)
+[Operations Console Demo](https://virtuarchitect.github.io/Nutanix-Migration-Readiness-Control-Plane/)
 
 The demo is generated from sample inventory only. It does not contact vCenter,
 Prism Central, Nutanix Move, AHV, NC2, or any customer environment.
