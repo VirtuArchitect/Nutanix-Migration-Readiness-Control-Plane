@@ -39,6 +39,7 @@ class GitHubCiTests(unittest.TestCase):
             "validate-move-lab-evidence-request",
             "validate-source-endpoint-evidence-request",
             "validate-operator-gate-summary",
+            "summarize-gates --dir outputs/ci-smoke",
             "validate-warning-acceptance",
             "external-proof-plan",
             "validate-external-proof-plan",
