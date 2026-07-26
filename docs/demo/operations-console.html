@@ -130,6 +130,10 @@
       background: white;
       color: var(--accent);
     }
+    button[disabled] {
+      cursor: not-allowed;
+      opacity: .58;
+    }
     button:focus, input:focus, select:focus, textarea:focus {
       outline: 2px solid var(--accent);
       outline-offset: 2px;
@@ -186,6 +190,22 @@
       padding: 10px;
       background: var(--panel);
     }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .proof {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 12px;
+      min-height: 120px;
+      white-space: pre-wrap;
+      overflow: auto;
+      font-size: 12px;
+    }
     @media (max-width: 960px) {
       .shell, .workbench { display: block; }
       .content { padding: 18px; }
@@ -226,45 +246,65 @@
           <h2>Connect Environments</h2>
           <div class="connections">
             
-      <article class="connection">
+      <article class="connection" data-connection="vcenter">
         <h3>vCenter</h3>
         <p class="muted">Read-only VM, network, guest, tools, snapshot, and dependency source.</p>
-        <label>Endpoint<input type="text" autocomplete="off" placeholder="Enter approved endpoint"></label>
-        <label>Mode<select><option>Read-only validation</option><option>Offline import</option><option>Approved lab proof</option></select></label>
-        <button type="button" data-connect="vcenter">Connect</button>
+        
+        <label>Endpoint<input data-field="endpoint" type="text" autocomplete="off" placeholder="Approved endpoint URL"></label>
+        <label>Username<input data-field="username" type="text" autocomplete="username" placeholder="Read-only account"></label>
+        <label>Password<input data-field="credential" type="password" autocomplete="current-password" placeholder="Request-only credential"></label>
+        <label>TLS verification<input data-field="verify_tls" type="checkbox" checked></label>
+        <label>Timeout seconds<input data-field="timeout" type="number" min="1" value="20"></label>
+        
         <p class="meta">Status: <span data-status>Not configured</span></p>
       </article>
     
             
-      <article class="connection">
+      <article class="connection" data-connection="prism">
         <h3>Prism Central</h3>
         <p class="muted">Read-only AHV/NC2 target inventory, capacity, categories, and collision checks.</p>
-        <label>Endpoint<input type="text" autocomplete="off" placeholder="Enter approved endpoint"></label>
-        <label>Mode<select><option>Read-only validation</option><option>Offline import</option><option>Approved lab proof</option></select></label>
-        <button type="button" data-connect="prism">Connect</button>
+        
+        <label>Endpoint<input data-field="endpoint" type="text" autocomplete="off" placeholder="Approved endpoint URL"></label>
+        <label>Username<input data-field="username" type="text" autocomplete="username" placeholder="Read-only account"></label>
+        <label>Password<input data-field="credential" type="password" autocomplete="current-password" placeholder="Request-only credential"></label>
+        <label>TLS verification<input data-field="verify_tls" type="checkbox" checked></label>
+        <label>Timeout seconds<input data-field="timeout" type="number" min="1" value="20"></label>
+        
         <p class="meta">Status: <span data-status>Not configured</span></p>
       </article>
     
             
-      <article class="connection">
+      <article class="connection" data-connection="move">
         <h3>Nutanix Move</h3>
         <p class="muted">Approved lab-only payload review and dry-run proof capture.</p>
-        <label>Endpoint<input type="text" autocomplete="off" placeholder="Enter approved endpoint"></label>
-        <label>Mode<select><option>Read-only validation</option><option>Offline import</option><option>Approved lab proof</option></select></label>
-        <button type="button" data-connect="move">Connect</button>
+        
+        <label>Endpoint<input type="text" autocomplete="off" placeholder="Optional local reference" disabled></label>
+        <label>Mode<select disabled><option>Not connected by this step</option></select></label>
+        
         <p class="meta">Status: <span data-status>Not configured</span></p>
       </article>
     
             
-      <article class="connection">
+      <article class="connection" data-connection="import">
         <h3>RVTools / Import</h3>
         <p class="muted">Offline CSV/JSON intake for discovery when live endpoints are not approved.</p>
-        <label>Endpoint<input type="text" autocomplete="off" placeholder="Enter approved endpoint"></label>
-        <label>Mode<select><option>Read-only validation</option><option>Offline import</option><option>Approved lab proof</option></select></label>
-        <button type="button" data-connect="import">Connect</button>
+        
+        <label>Endpoint<input type="text" autocomplete="off" placeholder="Optional local reference" disabled></label>
+        <label>Mode<select disabled><option>Not connected by this step</option></select></label>
+        
         <p class="meta">Status: <span data-status>Not configured</span></p>
       </article>
     
+          </div>
+          <div class="panel">
+            <h3>Tester Connection Workflow</h3>
+            <div class="actions">
+              <button type="button" id="test-connections">Test Read-only Connections</button>
+              <button type="button" id="collect-sources" class="secondary">Collect Source Evidence</button>
+              <button type="button" id="run-readiness" class="secondary">Run Readiness Assessment</button>
+            </div>
+            <p class="hint">These buttons call /api/connection-test, /api/collect-sources, and /api/run-readiness on this local console server. Passwords are sent only to the local process for the active request and are not written to proof files.</p>
+            <div class="proof" id="api-proof" role="status" aria-live="polite">Ready for tester input. API actions require the local nmrcp serve console. Use secure endpoints unless you are testing against a loopback simulator.</div>
           </div>
         </section>
         <section id="analyze" class="workbench">
@@ -328,12 +368,69 @@
     document.getElementById("search").addEventListener("input", applyFilters);
     document.getElementById("readiness-filter").addEventListener("change", applyFilters);
     waveFilter.addEventListener("change", applyFilters);
-    document.querySelectorAll("[data-connect]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const target = button.closest(".connection").querySelector("[data-status]");
-        target.textContent = "Pending approved local run";
+    function endpointPayload(prefix) {
+      const card = document.querySelector(`[data-connection="${prefix}"]`);
+      if (!card) return {};
+      return {
+        endpoint: card.querySelector("[data-field='endpoint']").value,
+        username: card.querySelector("[data-field='username']").value,
+        credential: card.querySelector("[data-field='credential']").value,
+        verify_tls: card.querySelector("[data-field='verify_tls']").checked,
+        timeout_seconds: Number(card.querySelector("[data-field='timeout']").value || 20)
+      };
+    }
+    function scrub(payload) {
+      return JSON.stringify(payload, (key, value) => key === "credential" ? "[request-only]" : value, 2);
+    }
+    function setProof(message) {
+      document.getElementById("api-proof").textContent = message;
+    }
+    async function postJson(path, body) {
+      setProof(`Running ${path}...`);
+      const response = await fetch(path, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(body)
       });
-    });
+      const text = await response.text();
+      let payload;
+      try { payload = JSON.parse(text); }
+      catch (error) {
+        throw new Error("Local console API is unavailable. Run nmrcp serve or Docker Compose, then open the local console URL.");
+      }
+      if (!response.ok || payload.status === "fail") {
+        throw new Error(scrub(payload));
+      }
+      setProof(scrub(payload));
+      return payload;
+    }
+    async function runAction(button, action) {
+      button.disabled = true;
+      try { await action(); }
+      catch (error) { setProof(error.message); }
+      finally { button.disabled = false; }
+    }
+    document.getElementById("test-connections").addEventListener("click", (event) => runAction(event.currentTarget, async () => {
+      const result = await postJson("/api/connection-test", {
+        vcenter: endpointPayload("vcenter"),
+        prism: endpointPayload("prism"),
+        require_vcenter: true,
+        require_prism: true
+      });
+      for (const check of result.result.checks || []) {
+        const status = document.querySelector(`[data-connection="${check.name === "prism-central" ? "prism" : check.name}"] [data-status]`);
+        if (status) status.textContent = check.status;
+      }
+    }));
+    document.getElementById("collect-sources").addEventListener("click", (event) => runAction(event.currentTarget, async () => {
+      await postJson("/api/collect-sources", {
+        vcenter: endpointPayload("vcenter"),
+        prism: endpointPayload("prism")
+      });
+    }));
+    document.getElementById("run-readiness").addEventListener("click", (event) => runAction(event.currentTarget, async () => {
+      await postJson("/api/run-readiness", {use_collected: true});
+    }));
     document.getElementById("copy-command").addEventListener("click", async () => {
       const command = document.getElementById("run-command").value;
       try { await navigator.clipboard.writeText(command); } catch (error) { void error; }

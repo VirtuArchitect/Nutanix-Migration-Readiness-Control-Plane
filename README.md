@@ -19,8 +19,10 @@ docker compose up --build
 ```
 
 Then open `http://localhost:8080/`. The container serves the same local-first
-console and health endpoint without contacting infrastructure by itself. See
-`docs/operations/docker.md`.
+console and health endpoint without contacting infrastructure by itself. In
+served mode, testers can use the browser to test approved read-only vCenter and
+Prism Central connections, collect local source evidence, and run readiness
+against collected inventory. See `docs/operations/docker.md`.
 
 This project is a local-first readiness and evidence layer for teams planning
 VMware-to-Nutanix AHV or NC2 migrations. It does not replace Nutanix Move,

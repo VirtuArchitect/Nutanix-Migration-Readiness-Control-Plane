@@ -15,6 +15,21 @@ Open:
 http://localhost:8080/
 ```
 
+Tester workflow:
+
+1. Open the console and enter approved lab vCenter and Prism Central endpoint
+   details.
+2. Select **Test Read-only Connections** to run the redacted
+   `/api/connection-test` proof. The proof is written locally as
+   `live-readiness.json` under the console data directory.
+3. Select **Collect Source Evidence** to run the read-only collector through
+   `/api/collect-sources`. This writes local `vcenter-inventory.json`,
+   `vcenter-networks.json`, `prism-inventory.json`, `prism-capacity.json`,
+   `collection-summary.json`, and the collection proof report.
+4. Select **Run Readiness Assessment** to score the collected inventory through
+   `/api/run-readiness` and refresh the operations console with the tester's
+   readiness output.
+
 Health endpoint:
 
 ```text
@@ -22,13 +37,18 @@ http://localhost:8080/healthz
 ```
 
 The container writes the generated console site under `/data/console-site`.
-With the included Compose file, that maps to `.\data` on the host.
+With the included Compose file, that maps to `.\data` on the host. Runtime
+connection proofs and generated assessment artifacts are local-only runtime
+outputs and are not intended for source control.
 
 The image does not contact vCenter, Prism Central, Nutanix Move, AHV, or NC2 by
-itself. Live endpoint collection still requires explicit approved local commands
-and read-only proof. Do not place credentials in committed files or baked images;
-pass approved lab credentials at runtime through environment variables, mounted
-secret files, or an operator-controlled secret store.
+itself. Live endpoint testing and collection require explicit operator action in
+the browser or CLI. Credentials are used only for the active local request; the
+redacted proof files record read-only API paths, counts, TLS posture, and
+`mutating_calls=0`, not passwords or endpoint values. Do not place credentials
+in committed files or baked images; pass approved lab credentials at runtime
+through the console, environment variables, mounted secret files, or an
+operator-controlled secret store.
 
 Appliance builds should reuse this container as the inner service and add first
 boot setup, TLS certificate handling, local encrypted credential storage, backup,

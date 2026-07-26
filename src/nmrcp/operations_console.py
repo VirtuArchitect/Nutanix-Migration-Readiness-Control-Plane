@@ -20,9 +20,15 @@ REQUIRED_TEXT = (
     "Prism Central",
     "Nutanix Move",
     "RVTools / Import",
+    "Test Read-only Connections",
+    "Collect Source Evidence",
+    "Run Readiness Assessment",
     "Run Compatibility Analysis",
     "Build Move Plan",
     "Operator Workbench",
+    "/api/connection-test",
+    "/api/collect-sources",
+    "/api/run-readiness",
     "Environment connections are local-only and require explicit operator approval.",
     "Do not store credentials in the console or generated artifacts.",
     "Use approved read-only collection before claiming endpoint proof.",
@@ -185,6 +191,10 @@ def write_operations_console(
       background: white;
       color: var(--accent);
     }}
+    button[disabled] {{
+      cursor: not-allowed;
+      opacity: .58;
+    }}
     button:focus, input:focus, select:focus, textarea:focus {{
       outline: 2px solid var(--accent);
       outline-offset: 2px;
@@ -241,6 +251,22 @@ def write_operations_console(
       padding: 10px;
       background: var(--panel);
     }}
+    .actions {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }}
+    .proof {{
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 12px;
+      min-height: 120px;
+      white-space: pre-wrap;
+      overflow: auto;
+      font-size: 12px;
+    }}
     @media (max-width: 960px) {{
       .shell, .workbench {{ display: block; }}
       .content {{ padding: 18px; }}
@@ -284,6 +310,16 @@ def write_operations_console(
             {connection_card("prism", "Prism Central", "Read-only AHV/NC2 target inventory, capacity, categories, and collision checks.")}
             {connection_card("move", "Nutanix Move", "Approved lab-only payload review and dry-run proof capture.")}
             {connection_card("import", "RVTools / Import", "Offline CSV/JSON intake for discovery when live endpoints are not approved.")}
+          </div>
+          <div class="panel">
+            <h3>Tester Connection Workflow</h3>
+            <div class="actions">
+              <button type="button" id="test-connections">Test Read-only Connections</button>
+              <button type="button" id="collect-sources" class="secondary">Collect Source Evidence</button>
+              <button type="button" id="run-readiness" class="secondary">Run Readiness Assessment</button>
+            </div>
+            <p class="hint">These buttons call /api/connection-test, /api/collect-sources, and /api/run-readiness on this local console server. Passwords are sent only to the local process for the active request and are not written to proof files.</p>
+            <div class="proof" id="api-proof" role="status" aria-live="polite">Ready for tester input. API actions require the local nmrcp serve console. Use secure endpoints unless you are testing against a loopback simulator.</div>
           </div>
         </section>
         <section id="analyze" class="workbench">
@@ -345,12 +381,69 @@ def write_operations_console(
     document.getElementById("search").addEventListener("input", applyFilters);
     document.getElementById("readiness-filter").addEventListener("change", applyFilters);
     waveFilter.addEventListener("change", applyFilters);
-    document.querySelectorAll("[data-connect]").forEach((button) => {{
-      button.addEventListener("click", () => {{
-        const target = button.closest(".connection").querySelector("[data-status]");
-        target.textContent = "Pending approved local run";
+    function endpointPayload(prefix) {{
+      const card = document.querySelector(`[data-connection="${{prefix}}"]`);
+      if (!card) return {{}};
+      return {{
+        endpoint: card.querySelector("[data-field='endpoint']").value,
+        username: card.querySelector("[data-field='username']").value,
+        credential: card.querySelector("[data-field='credential']").value,
+        verify_tls: card.querySelector("[data-field='verify_tls']").checked,
+        timeout_seconds: Number(card.querySelector("[data-field='timeout']").value || 20)
+      }};
+    }}
+    function scrub(payload) {{
+      return JSON.stringify(payload, (key, value) => key === "credential" ? "[request-only]" : value, 2);
+    }}
+    function setProof(message) {{
+      document.getElementById("api-proof").textContent = message;
+    }}
+    async function postJson(path, body) {{
+      setProof(`Running ${{path}}...`);
+      const response = await fetch(path, {{
+        method: "POST",
+        headers: {{"Content-Type": "application/json"}},
+        body: JSON.stringify(body)
       }});
-    }});
+      const text = await response.text();
+      let payload;
+      try {{ payload = JSON.parse(text); }}
+      catch (error) {{
+        throw new Error("Local console API is unavailable. Run nmrcp serve or Docker Compose, then open the local console URL.");
+      }}
+      if (!response.ok || payload.status === "fail") {{
+        throw new Error(scrub(payload));
+      }}
+      setProof(scrub(payload));
+      return payload;
+    }}
+    async function runAction(button, action) {{
+      button.disabled = true;
+      try {{ await action(); }}
+      catch (error) {{ setProof(error.message); }}
+      finally {{ button.disabled = false; }}
+    }}
+    document.getElementById("test-connections").addEventListener("click", (event) => runAction(event.currentTarget, async () => {{
+      const result = await postJson("/api/connection-test", {{
+        vcenter: endpointPayload("vcenter"),
+        prism: endpointPayload("prism"),
+        require_vcenter: true,
+        require_prism: true
+      }});
+      for (const check of result.result.checks || []) {{
+        const status = document.querySelector(`[data-connection="${{check.name === "prism-central" ? "prism" : check.name}}"] [data-status]`);
+        if (status) status.textContent = check.status;
+      }}
+    }}));
+    document.getElementById("collect-sources").addEventListener("click", (event) => runAction(event.currentTarget, async () => {{
+      await postJson("/api/collect-sources", {{
+        vcenter: endpointPayload("vcenter"),
+        prism: endpointPayload("prism")
+      }});
+    }}));
+    document.getElementById("run-readiness").addEventListener("click", (event) => runAction(event.currentTarget, async () => {{
+      await postJson("/api/run-readiness", {{use_collected: true}});
+    }}));
     document.getElementById("copy-command").addEventListener("click", async () => {{
       const command = document.getElementById("run-command").value;
       try {{ await navigator.clipboard.writeText(command); }} catch (error) {{ void error; }}
@@ -453,13 +546,24 @@ def summarize(assessments: list[WorkloadAssessment]) -> dict[str, int]:
 
 
 def connection_card(identifier: str, title: str, description: str) -> str:
+    if identifier in {"move", "import"}:
+        endpoint_controls = """
+        <label>Endpoint<input type="text" autocomplete="off" placeholder="Optional local reference" disabled></label>
+        <label>Mode<select disabled><option>Not connected by this step</option></select></label>
+        """
+    else:
+        endpoint_controls = """
+        <label>Endpoint<input data-field="endpoint" type="text" autocomplete="off" placeholder="Approved endpoint URL"></label>
+        <label>Username<input data-field="username" type="text" autocomplete="username" placeholder="Read-only account"></label>
+        <label>Password<input data-field="credential" type="password" autocomplete="current-password" placeholder="Request-only credential"></label>
+        <label>TLS verification<input data-field="verify_tls" type="checkbox" checked></label>
+        <label>Timeout seconds<input data-field="timeout" type="number" min="1" value="20"></label>
+        """
     return f"""
-      <article class="connection">
+      <article class="connection" data-connection="{escape(identifier)}">
         <h3>{escape(title)}</h3>
         <p class="muted">{escape(description)}</p>
-        <label>Endpoint<input type="text" autocomplete="off" placeholder="Enter approved endpoint"></label>
-        <label>Mode<select><option>Read-only validation</option><option>Offline import</option><option>Approved lab proof</option></select></label>
-        <button type="button" data-connect="{escape(identifier)}">Connect</button>
+        {endpoint_controls}
         <p class="meta">Status: <span data-status>Not configured</span></p>
       </article>
     """
