@@ -106,6 +106,7 @@ or a future UI.
 - Approval exceptions: `<assessment-dir>\approval-exceptions.csv`.
 - Evidence bundle: sibling `<assessment-dir-name>-evidence-bundle.zip`.
 - Handoff package: sibling `<assessment-dir-name>-handoff-package.zip`.
+- Operations console: `<assessment-dir>\operations-console.html`.
 - Operator portal: `<assessment-dir>\operator-portal.html`.
 - Operator dashboard: `<assessment-dir>\operator-dashboard.html`.
 - Operator gate summary: `<assessment-dir>\operator-gate-summary.md`.

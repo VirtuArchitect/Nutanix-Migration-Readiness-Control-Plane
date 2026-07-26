@@ -7,6 +7,7 @@ reviewers.
 The portal links the core artifacts an operator naturally opens first:
 
 - `operator-dashboard.html`
+- `operations-console.html`
 - `operator-report.html`
 - `executive-readiness-brief.md`
 - `change-board-evidence.md`

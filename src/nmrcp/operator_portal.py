@@ -10,6 +10,7 @@ from typing import Any
 
 PORTAL_SCHEMA_VERSION = "nmrcp_operator_portal_v1"
 PORTAL_ARTIFACTS = (
+    ("operations-console.html", "Operations console", "Move-style guided UI for connection setup, compatibility analysis, and Move planning."),
     ("operator-dashboard.html", "Operator dashboard", "Interactive workload queue and filters."),
     ("operator-report.html", "Operator report", "Detailed assessment report for operators and change boards."),
     ("executive-readiness-brief.md", "Executive brief", "Sponsor-ready summary and decision ask."),

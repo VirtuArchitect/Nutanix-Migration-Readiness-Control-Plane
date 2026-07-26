@@ -33,6 +33,7 @@ from .operator_review import validate_operator_review
 from .operator_report import validate_operator_report
 from .operator_dashboard import validate_operator_dashboard
 from .operator_portal import validate_operator_portal
+from .operations_console import validate_operations_console
 from .partner_handoff_matrix import validate_partner_handoff_matrix
 from .prism_categories import validate_prism_category_mapping
 from .owner_risk import validate_owner_risk_summary
@@ -92,6 +93,7 @@ REQUIRED_ASSESSMENT_ARTIFACTS = {
     "executive-readiness-brief.md",
     "change-board-evidence.md",
     "migration-runbook.md",
+    "operations-console.html",
     "operator-portal.html",
     "operator-report.html",
     "operator-dashboard.html",
@@ -529,6 +531,16 @@ def run_change_gate(
         add_check(checks, "migration-runbook", migration_runbook.ok, migration_runbook.summary())
         errors.extend(migration_runbook.errors)
         warnings.extend(migration_runbook.warnings)
+
+    try:
+        operations_console = validate_operations_console(assessment_dir / "operations-console.html", assessment_dir / "assessment.json")
+    except Exception as exc:  # noqa: BLE001
+        add_check(checks, "operations-console", False, "validation raised an exception")
+        errors.append(f"Operations console validation failed: {exc}")
+    else:
+        add_check(checks, "operations-console", operations_console.ok, operations_console.summary())
+        errors.extend(operations_console.errors)
+        warnings.extend(operations_console.warnings)
 
     try:
         operator_portal = validate_operator_portal(assessment_dir / "operator-portal.html", assessment_dir / "assessment.json")

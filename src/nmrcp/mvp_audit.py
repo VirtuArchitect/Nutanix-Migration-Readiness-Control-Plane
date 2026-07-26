@@ -139,13 +139,16 @@ REQUIREMENTS: tuple[dict[str, Any], ...] = (
             "src/nmrcp/waves.py",
             "src/nmrcp/wave_execution_calendar.py",
             "src/nmrcp/operator_portal.py",
+            "src/nmrcp/operations_console.py",
             "tests/test_waves_and_evidence.py",
             "tests/test_wave_execution_calendar.py",
             "tests/test_operator_portal.py",
+            "tests/test_operations_console.py",
             "docs/operations/assessment-workflow.md",
             "docs/operations/change-gate.md",
             "docs/operations/wave-execution-calendar.md",
             "docs/operations/operator-portal.md",
+            "docs/operations/operations-console.md",
         ),
         "artifacts": (
             "migration-waves.csv",
@@ -172,6 +175,7 @@ REQUIREMENTS: tuple[dict[str, Any], ...] = (
             "what-will-break-report.csv",
             "what-will-break-brief.md",
             "executive-readiness-brief.md",
+            "operations-console.html",
             "operator-portal.html",
             "operator-report.html",
             "operator-dashboard.html",
@@ -552,6 +556,7 @@ def validate_waves_and_evidence_contracts(assessment_dir: Path) -> tuple[tuple[s
     from .migration_execution_queue import validate_migration_execution_queue
     from .move_staging_readiness import validate_move_staging_readiness
     from .operator_dashboard import validate_operator_dashboard
+    from .operations_console import validate_operations_console
     from .operator_portal import validate_operator_portal
     from .operator_report import validate_operator_report
     from .prism_categories import validate_prism_category_mapping
@@ -589,6 +594,7 @@ def validate_waves_and_evidence_contracts(assessment_dir: Path) -> tuple[tuple[s
         ("stakeholder-communication-plan", validate_stakeholder_comms(assessment_dir / "stakeholder-communication-plan.csv", assessment)),
         ("what-will-break-report", validate_what_will_break(assessment_dir / "what-will-break-report.csv", assessment)),
         ("executive-readiness-brief", validate_executive_brief(assessment_dir / "executive-readiness-brief.md", assessment)),
+        ("operations-console", validate_operations_console(assessment_dir / "operations-console.html", assessment)),
         ("operator-portal", validate_operator_portal(assessment_dir / "operator-portal.html", assessment)),
         ("operator-report", validate_operator_report(assessment_dir / "operator-report.html", assessment)),
         ("operator-dashboard", validate_operator_dashboard(assessment_dir / "operator-dashboard.html", assessment)),

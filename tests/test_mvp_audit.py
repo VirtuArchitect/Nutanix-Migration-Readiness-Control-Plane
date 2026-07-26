@@ -65,6 +65,7 @@ class MvpAuditTests(unittest.TestCase):
                 "what-will-break-report.csv",
                 "what-will-break-brief.md",
                 "executive-readiness-brief.md",
+                "operations-console.html",
                 "operator-portal.html",
                 "operator-report.html",
                 "operator-dashboard.html",

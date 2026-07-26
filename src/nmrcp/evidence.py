@@ -22,6 +22,7 @@ from .move_plan_brief import write_move_plan_brief
 from .move_staging_readiness import move_staging_readiness_context, write_move_staging_brief, write_move_staging_readiness_csv
 from .models import Wave, WorkloadAssessment
 from .operator_portal import write_operator_portal
+from .operations_console import write_operations_console
 from .partner_handoff_matrix import partner_handoff_context, write_partner_handoff_matrix_csv
 from .prism_categories import prism_category_context, write_prism_category_mapping_csv
 from .recovery_readiness import recovery_readiness_context, write_recovery_readiness_csv
@@ -114,6 +115,7 @@ def write_assessment(
     write_executive_readiness_brief(inventory, assessments, waves, out_dir / "executive-readiness-brief.md")
     write_evidence_markdown(inventory, assessments, waves, out_dir / "change-board-evidence.md")
     write_migration_runbook(inventory, assessments, waves, out_dir / "migration-runbook.md")
+    write_operations_console(inventory, assessments, waves, out_dir / "operations-console.html")
     write_operator_portal(inventory, assessments, waves, out_dir / "operator-portal.html")
     write_html_report(inventory, assessments, waves, out_dir / "operator-report.html")
     write_operator_dashboard(inventory, assessments, waves, out_dir / "operator-dashboard.html")

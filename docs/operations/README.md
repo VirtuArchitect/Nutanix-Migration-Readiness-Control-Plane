@@ -861,6 +861,17 @@ fails validation until replaced with captured approved lab evidence.
 For structured pre/post validation evidence, see
 [validation-results.md](validation-results.md).
 
+## Operations Console
+
+`operations-console.html` is generated with every assessment. It is a
+self-contained local UI for operators to connect vCenter, Prism Central,
+Nutanix Move, and RVTools/import sources, then review compatibility analysis,
+readiness filters, wave placement, Move staging intent, and proof boundaries.
+
+Validate the assessment-backed console contract with
+`validate-operations-console`; `change-gate` runs the same check automatically.
+See [operations-console.md](operations-console.md).
+
 ## Operator Portal
 
 `operator-portal.html` is generated with every assessment. It is a

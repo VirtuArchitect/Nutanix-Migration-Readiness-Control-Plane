@@ -441,6 +441,11 @@ The command writes:
   governance facts, dependency coordination, and required actions.
   Validate it with `validate-migration-runbook`; `change-gate` runs the same
   assessment-backed operator contract automatically.
+- `operations-console.html`: self-contained local operations console with
+  vCenter, Prism Central, Nutanix Move, and RVTools/import connection panels,
+  compatibility analysis filters, and Move-plan workbench actions. Validate it
+  with `validate-operations-console`; `change-gate` runs the same
+  assessment-backed console contract automatically.
 - `operator-portal.html`: self-contained local landing page that links the
   dashboard, report, executive brief, change-board evidence, runbook, Move
   plan, validation checklist, closure checklist, and manifest. Validate it with
@@ -913,6 +918,14 @@ artifact ignore rules.
 It reports whether vCenter and Prism Central environment variables are present
 without printing their values. Missing endpoint variables are warnings, not
 failures, because the local sample workflow does not require live credentials.
+
+## Operations Console
+
+Every assessment writes `operations-console.html`, a dependency-free local UI
+for migration operators. It is shaped like a migration tool front door: connect
+source and target environments, review compatibility analysis, filter workload
+readiness, and prepare the Move plan while keeping endpoint-proof and Move lab
+proof boundaries visible. See `docs/operations/operations-console.md`.
 
 ## Operator Report
 

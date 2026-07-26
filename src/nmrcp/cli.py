@@ -69,6 +69,7 @@ from .operator_review import validate_operator_review, write_operator_review_tem
 from .operator_report import validate_operator_report
 from .operator_dashboard import validate_operator_dashboard
 from .operator_portal import validate_operator_portal
+from .operations_console import validate_operations_console
 from .owner_risk import validate_owner_risk_summary
 from .partner_handoff_matrix import validate_partner_handoff_matrix
 from .prism_categories import validate_prism_category_mapping
@@ -454,6 +455,10 @@ def main(argv: list[str] | None = None) -> int:
     operator_portal = subparsers.add_parser("validate-operator-portal", help="Validate operator-portal.html against assessment.json")
     operator_portal.add_argument("--portal", required=True, type=Path, help="Path to operator-portal.html")
     operator_portal.add_argument("--assessment", required=True, type=Path, help="Path to assessment.json")
+
+    operations_console = subparsers.add_parser("validate-operations-console", help="Validate operations-console.html against assessment.json")
+    operations_console.add_argument("--console", required=True, type=Path, help="Path to operations-console.html")
+    operations_console.add_argument("--assessment", required=True, type=Path, help="Path to assessment.json")
 
     operator_dashboard = subparsers.add_parser("validate-operator-dashboard", help="Validate operator-dashboard.html against assessment.json")
     operator_dashboard.add_argument("--dashboard", required=True, type=Path, help="Path to operator-dashboard.html")
@@ -1605,6 +1610,14 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if result.ok else 1
     if args.command == "validate-operator-portal":
         result = validate_operator_portal(args.portal, args.assessment)
+        print(result.summary())
+        for warning in result.warnings:
+            print(f"WARNING: {warning}")
+        for error in result.errors:
+            print(f"ERROR: {error}")
+        return 0 if result.ok else 1
+    if args.command == "validate-operations-console":
+        result = validate_operations_console(args.console, args.assessment)
         print(result.summary())
         for warning in result.warnings:
             print(f"WARNING: {warning}")
