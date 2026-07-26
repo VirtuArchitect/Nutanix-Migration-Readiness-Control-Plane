@@ -1,0 +1,175 @@
+{
+  "source": {
+    "system": "sanitized-vcenter-export",
+    "collected_by": "migration-readiness-control-plane",
+    "endpoint": "https://vcenter01.corp.local/sdk",
+    "operator_email": "migration.owner@example.com",
+    "collection_audit": {
+      "schema": "nmrcp_collection_audit_v1",
+      "mode": "read-only",
+      "credential_storage": "not_persisted",
+      "endpoint_configured": true,
+      "api_paths": ["/api/session", "/api/vcenter/vm", "/api/vcenter/vm/{vm}", "/api/vcenter/network"],
+      "summary_count": 3,
+      "details_limit": 250,
+      "details_count": 3,
+      "network_count": 4,
+      "mutating_calls": 0
+    }
+  },
+  "workloads": [
+    {
+      "id": "vm-1001",
+      "name": "pilot-web-01",
+      "owner": "Platform Team",
+      "tier": "noncritical",
+      "guest_os": "Ubuntu Linux 22.04",
+      "cpu": 4,
+      "memory_gib": 16,
+      "disk_gib": 120,
+      "storage": {
+        "disk_count": 1,
+        "thin_provisioned": true,
+        "raw_device_mapping": false,
+        "shared_disk": false,
+        "independent_disk": false,
+        "encrypted": false,
+        "datastores": ["ds-pilot"],
+        "min_datastore_free_percent": 38
+      },
+      "tags": ["pilot", "web"],
+      "networking": {
+        "uses_vds": false,
+        "uses_nsx": false,
+        "vlans": ["120"]
+      },
+      "guest_identity": {
+        "hostname": "pilot-web-01",
+        "dns_name": "pilot-web-01.example.test",
+        "ip_addresses": ["10.10.120.11"],
+        "valid_ip_addresses": ["10.10.120.11"],
+        "invalid_ip_addresses": [],
+        "has_ipv4": true,
+        "has_ipv6": false
+      },
+      "snapshots": {
+        "count": 0
+      },
+      "tools": {
+        "vmware_tools": true,
+        "virtio_ready": true
+      },
+      "backup": {
+        "protected": true,
+        "last_success_hours": 6
+      },
+      "vendor_support": ["ahv", "nc2"],
+      "dependencies": []
+    },
+    {
+      "id": "vm-2020",
+      "name": "erp-app-01",
+      "owner": "Business Apps",
+      "tier": "critical",
+      "guest_os": "Windows Server 2019",
+      "cpu": 8,
+      "memory_gib": 64,
+      "disk_gib": 900,
+      "storage": {
+        "disk_count": 4,
+        "thin_provisioned": true,
+        "raw_device_mapping": false,
+        "shared_disk": false,
+        "independent_disk": false,
+        "encrypted": false,
+        "datastores": ["ds-prod-erp"],
+        "min_datastore_free_percent": 31
+      },
+      "tags": ["erp", "prod"],
+      "networking": {
+        "uses_vds": true,
+        "uses_nsx": false,
+        "vlans": ["310"]
+      },
+      "guest_identity": {
+        "hostname": "erp-app-01",
+        "dns_name": "erp-app-01.example.test",
+        "ip_addresses": ["10.10.310.21"],
+        "valid_ip_addresses": [],
+        "invalid_ip_addresses": ["10.10.310.21"],
+        "has_ipv4": false,
+        "has_ipv6": false
+      },
+      "snapshots": {
+        "count": 2,
+        "oldest_days": 17
+      },
+      "tools": {
+        "vmware_tools": true,
+        "virtio_ready": false
+      },
+      "backup": {
+        "protected": true,
+        "last_success_hours": 4
+      },
+      "vendor_support": ["vmware"],
+      "dependencies": [
+        {
+          "name": "erp-db-01",
+          "owner": "Database Team"
+        }
+      ]
+    },
+    {
+      "id": "vm-3030",
+      "name": "payments-edge-01",
+      "owner": "Payments",
+      "tier": "critical",
+      "guest_os": "Custom Linux Appliance",
+      "cpu": 4,
+      "memory_gib": 32,
+      "disk_gib": 250,
+      "storage": {
+        "disk_count": 2,
+        "thin_provisioned": false,
+        "raw_device_mapping": false,
+        "shared_disk": false,
+        "independent_disk": false,
+        "encrypted": false,
+        "datastores": ["ds-edge"],
+        "min_datastore_free_percent": 22
+      },
+      "tags": ["pci", "edge"],
+      "networking": {
+        "uses_vds": true,
+        "uses_nsx": true,
+        "vlans": ["410", "411"]
+      },
+      "guest_identity": {
+        "hostname": "",
+        "dns_name": "",
+        "ip_addresses": [],
+        "valid_ip_addresses": [],
+        "invalid_ip_addresses": [],
+        "has_ipv4": false,
+        "has_ipv6": false
+      },
+      "snapshots": {
+        "count": 0
+      },
+      "tools": {
+        "vmware_tools": true,
+        "virtio_ready": false
+      },
+      "backup": {
+        "protected": false
+      },
+      "vendor_support": ["vmware"],
+      "dependencies": [
+        {
+          "name": "external-hsm"
+        }
+      ]
+    }
+  ]
+}

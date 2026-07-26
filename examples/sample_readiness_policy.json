@@ -1,0 +1,6 @@
+{
+  "snapshot_max_age_days": 7,
+  "backup_max_age_hours": 24,
+  "prepare_risk_threshold": 25,
+  "blocked_risk_threshold": 50
+}

@@ -1,0 +1,12 @@
+schema_version,source_vm_id,source_vm_name,phase,check_name,status,evidence_ref,validated_by,validated_at,notes
+nmrcp_validation_results_v1,vm-1001,pilot-web-01,pre,owner_approval,pass,CHG-1001/pre-owner,Platform Team,2026-07-24T10:00:00Z,Synthetic approved owner record
+nmrcp_validation_results_v1,vm-1001,pilot-web-01,pre,backup_restore_point,pass,CHG-1001/pre-backup,Backup Team,2026-07-24T10:05:00Z,Synthetic backup evidence
+nmrcp_validation_results_v1,vm-1001,pilot-web-01,pre,snapshot_removed_or_approved,pass,CHG-1001/pre-snapshot,VMware Team,2026-07-24T10:10:00Z,Synthetic snapshot evidence
+nmrcp_validation_results_v1,vm-1001,pilot-web-01,pre,network_mapping_approved,pass,CHG-1001/pre-network,Network Team,2026-07-24T10:15:00Z,Synthetic network evidence
+nmrcp_validation_results_v1,vm-1001,pilot-web-01,pre,rollback_owner_confirmed,pass,CHG-1001/pre-rollback,Platform Team,2026-07-24T10:20:00Z,Synthetic rollback evidence
+nmrcp_validation_results_v1,vm-1001,pilot-web-01,post,power_state,pass,CHG-1001/post-power,Migration Team,2026-07-24T12:00:00Z,Synthetic post power evidence
+nmrcp_validation_results_v1,vm-1001,pilot-web-01,post,ip_dns_connectivity,pass,CHG-1001/post-network,Network Team,2026-07-24T12:05:00Z,Synthetic post network evidence
+nmrcp_validation_results_v1,vm-1001,pilot-web-01,post,tools_driver_state,pass,CHG-1001/post-tools,Migration Team,2026-07-24T12:10:00Z,Synthetic tools evidence
+nmrcp_validation_results_v1,vm-1001,pilot-web-01,post,application_health,pass,CHG-1001/post-app,Application Owner,2026-07-24T12:15:00Z,Synthetic app health evidence
+nmrcp_validation_results_v1,vm-1001,pilot-web-01,post,target_backup_policy,pass,CHG-1001/post-backup,Backup Team,2026-07-24T12:20:00Z,Synthetic target backup evidence
+nmrcp_validation_results_v1,vm-1001,pilot-web-01,post,monitoring_logging,pass,CHG-1001/post-monitoring,Monitoring Team,2026-07-24T12:25:00Z,Synthetic monitoring evidence

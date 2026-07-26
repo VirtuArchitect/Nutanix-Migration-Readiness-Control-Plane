@@ -1,0 +1,5 @@
+source_id,source_name,owner,tier,tags,backup_protected,backup_last_success_hours,vendor_support,virtio_ready,application_owner_approved,rollback_owner,notes
+vm-1001,pilot-web-01,Platform Team,noncritical,"pilot;web;cmdb-owned",yes,6,"ahv,nc2",true,yes,Platform Team,Synthetic CMDB enrichment
+vm-2020,erp-app-01,Business Apps,critical,"erp;prod;finance",yes,4,ahv,true,yes,Business Apps,Owner-approved remediation override sample
+vm-3030,payments-edge-01,Payments,critical,"pci;edge",no,0,vmware,false,no,,Requires NSX redesign
+vm-9999,retired-vm,Retired Apps,noncritical,retired,yes,12,ahv,true,yes,Retired Apps,Unmatched sample record

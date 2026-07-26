@@ -1,0 +1,32 @@
+{
+  "plan_name": "NMRCP Pilot Wave 0 Lab",
+  "source_provider": {
+    "name": "vcenter-source-lab",
+    "type": "vcenter",
+    "uuid": "11111111-1111-4111-8111-111111111111"
+  },
+  "target_provider": {
+    "name": "prism-central-target-lab",
+    "type": "prism_central",
+    "uuid": "22222222-2222-4222-8222-222222222222"
+  },
+  "target_cluster": {
+    "name": "target-ahv-cluster",
+    "uuid": "33333333-3333-4333-8333-333333333333"
+  },
+  "target_container": {
+    "name": "default-container",
+    "uuid": "44444444-4444-4444-8444-444444444444"
+  },
+  "network_mappings": [
+    {
+      "source_network": "120",
+      "target_network": "vlan-120-ahv"
+    }
+  ],
+  "schedule": {
+    "mode": "manual",
+    "timezone": "UTC",
+    "start_immediately": false
+  }
+}

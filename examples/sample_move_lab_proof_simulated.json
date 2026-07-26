@@ -1,0 +1,26 @@
+{
+  "schema_version": "nmrcp_move_lab_proof_v1",
+  "proof_scope": "simulated_contract",
+  "environment": "lab",
+  "reviewed_by": "Lab Migration Lead",
+  "reviewed_at": "2026-07-24T12:00:00+00:00",
+  "lab_move_appliance": "move-lab-01.example.test",
+  "api_round_trip": true,
+  "dry_run_only": true,
+  "mutation_performed": false,
+  "production_targets": false,
+  "results": {
+    "payload_workloads": 1,
+    "accepted_payloads": 1,
+    "created_plans": 0,
+    "started_migrations": 0
+  },
+  "approvals": {
+    "change_window_reviewed": true,
+    "rollback_reviewed": true,
+    "operator_present": true,
+    "no_production_targets": true,
+    "credentials_not_persisted": true
+  },
+  "notes": "Synthetic contract proof for local smoke. Replace with approved_lab_move_appliance proof after real lab Move testing."
+}

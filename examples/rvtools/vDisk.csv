@@ -1,0 +1,5 @@
+VM,Disk,Capacity MiB
+app-01,Hard disk 1,51200
+db-01,Hard disk 1,153600
+db-01,Hard disk 2,51200
+legacy-01,Hard disk 1,40960

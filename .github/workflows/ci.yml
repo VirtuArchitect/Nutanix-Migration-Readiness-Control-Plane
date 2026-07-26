@@ -1,0 +1,217 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile
+        run: |
+          PYTHONPATH=src python -m py_compile src/nmrcp/*.py
+      - name: GitHub readiness
+        run: |
+          PYTHONPATH=src python -m nmrcp.cli github-readiness --repo-root . --expected-remote https://github.com/VirtuArchitect/Nutanix-Migration-Readiness-Control-Plane --out outputs/ci-github-publication-review.md --json-out outputs/ci-github-publication-review.json
+          PYTHONPATH=src python -m nmrcp.cli validate-github-publication-review --repo-root . --expected-remote https://github.com/VirtuArchitect/Nutanix-Migration-Readiness-Control-Plane --report outputs/ci-github-publication-review.md --json-report outputs/ci-github-publication-review.json
+      - name: Unit tests
+        run: |
+          PYTHONPATH=src python -m unittest discover -s tests
+      - name: Security scan
+        run: |
+          python scripts/security_scan.py
+      - name: Smoke
+        run: |
+          export PYTHONPATH=src
+          python scripts/live_collector_smoke.py
+          test -f outputs/live-collector-smoke/vcenter-inventory.json
+          test -f outputs/live-collector-smoke/vcenter-networks.json
+          test -f outputs/live-collector-smoke/prism-inventory.json
+          test -f outputs/live-collector-smoke/prism-capacity.json
+          test -f outputs/live-collector-smoke/collection-summary.json
+          test -f outputs/live-collector-smoke/collection-proof-report.md
+          test -f outputs/live-collector-smoke/assessment/evidence-manifest.json
+          test -f outputs/live-collector-smoke/assessment/target-capacity-fit.csv
+          python -m nmrcp.cli generate-assessment-intake --out outputs/ci-assessment-intake.template.csv
+          python -m nmrcp.cli validate-assessment-intake --intake examples/sample_assessment_intake.csv
+          python -m nmrcp.cli source-collection-plan --intake examples/sample_assessment_intake.csv --out outputs/ci-source-collection-plan.md
+          python -m nmrcp.cli validate-source-collection-plan --plan outputs/ci-source-collection-plan.md --intake examples/sample_assessment_intake.csv
+          python -m nmrcp.cli validate-collection-audit --inventory outputs/live-collector-smoke/vcenter-inventory.json
+          python -m nmrcp.cli validate-collection-audit --inventory outputs/live-collector-smoke/prism-inventory.json
+          python -m nmrcp.cli validate-collection-proof-report --report outputs/live-collector-smoke/collection-proof-report.md --collection-summary outputs/live-collector-smoke/collection-summary.json
+          python -m nmrcp.cli import-rvtools --dir examples/rvtools --source-name synthetic-rvtools --out outputs/ci-rvtools-inventory.json
+          python -m nmrcp.cli validate-inventory --inventory outputs/ci-rvtools-inventory.json
+          python -m nmrcp.cli validate-collection-audit --inventory outputs/ci-rvtools-inventory.json
+          python -m nmrcp.cli assess --inventory outputs/ci-rvtools-inventory.json --policy examples/sample_readiness_policy.json --out outputs/ci-rvtools
+          python -m nmrcp.cli live-readiness --out outputs/ci-live-readiness.json
+          python -m nmrcp.cli validate-live-proof --live-readiness outputs/live-collector-smoke/live-readiness.json --collection-summary outputs/live-collector-smoke/collection-summary.json --source-dir outputs/live-collector-smoke --out outputs/ci-live-proof-validation.json
+          python -m nmrcp.cli import-cmdb-metadata --export examples/sample_cmdb_export.csv --out outputs/ci-cmdb-metadata.csv
+          python -m nmrcp.cli enrich-metadata --inventory examples/sample_inventory.json --metadata outputs/ci-cmdb-metadata.csv --out outputs/ci-metadata-inventory.json
+          python -m nmrcp.cli enrich-dependencies --inventory outputs/ci-metadata-inventory.json --dependencies examples/sample_dependencies.csv --out outputs/ci-enriched-inventory.json
+          python -m nmrcp.cli validate-inventory --inventory outputs/ci-enriched-inventory.json
+          python -m nmrcp.cli validate-collection-audit --inventory outputs/ci-enriched-inventory.json
+          python -m nmrcp.cli assess --inventory outputs/ci-enriched-inventory.json --capacity examples/sample_target_capacity.json --out outputs/ci-smoke
+          python -m nmrcp.cli validate-wave-execution-calendar --calendar outputs/ci-smoke/wave-execution-calendar.csv --assessment outputs/ci-smoke/assessment.json
+          python -m nmrcp.cli validate-partner-handoff --matrix outputs/ci-smoke/partner-handoff-matrix.csv --assessment outputs/ci-smoke/assessment.json
+          python -m nmrcp.cli validate-move-lab-evidence-request --request outputs/ci-smoke/move-lab-evidence-request.md
+          python -m nmrcp.cli validate-source-endpoint-evidence-request --request outputs/ci-smoke/source-endpoint-evidence-request.md
+          python -m nmrcp.cli validate-operator-portal --portal outputs/ci-smoke/operator-portal.html --assessment outputs/ci-smoke/assessment.json
+          python -m nmrcp.cli validate-prism-categories --mapping outputs/ci-smoke/prism-category-mapping.csv --assessment outputs/ci-smoke/assessment.json
+          python -m nmrcp.cli validate-stakeholder-comms --plan outputs/ci-smoke/stakeholder-communication-plan.csv --assessment outputs/ci-smoke/assessment.json
+          python -m nmrcp.cli validate-what-will-break --report outputs/ci-smoke/what-will-break-report.csv --assessment outputs/ci-smoke/assessment.json
+          python -m nmrcp.cli validate-move-plan --plan outputs/ci-smoke/nutanix-move-plan.csv
+          python -m nmrcp.cli validate-move-plan-brief --brief outputs/ci-smoke/move-plan-brief.md --plan outputs/ci-smoke/nutanix-move-plan.csv --assessment outputs/ci-smoke/assessment.json
+          python -m nmrcp.cli validate-capacity --inventory outputs/ci-enriched-inventory.json --plan outputs/ci-smoke/nutanix-move-plan.csv --capacity examples/sample_target_capacity.json --out outputs/ci-smoke/target-capacity-fit.csv
+          python -m nmrcp.cli reconcile-target --inventory outputs/ci-enriched-inventory.json --target-inventory examples/sample_prism_inventory.json --plan outputs/ci-smoke/nutanix-move-plan.csv --out outputs/ci-smoke/target-reconciliation.csv
+          python -m nmrcp.cli validate-target-reconciliation --reconciliation outputs/ci-smoke/target-reconciliation.csv
+          python -m nmrcp.cli validate-source-networks --plan outputs/ci-smoke/nutanix-move-plan.csv --networks outputs/live-collector-smoke/vcenter-networks.json --out outputs/ci-smoke/source-network-validation.csv
+          python -m nmrcp.cli validate-source-network-results --results outputs/ci-smoke/source-network-validation.csv
+          python -m nmrcp.cli validate-network-mappings --plan outputs/ci-smoke/nutanix-move-plan.csv --config examples/sample_move_payload_config.json --out outputs/ci-smoke/target-network-mapping.csv
+          python -m nmrcp.cli generate-validation-template --plan outputs/ci-smoke/nutanix-move-plan.csv --out outputs/ci-validation-results.template.csv
+          python -m nmrcp.cli validate-validation-results --results outputs/ci-validation-results.template.csv --allow-open
+          python -m nmrcp.cli validate-validation-results --results examples/sample_validation_results.csv
+          python -m nmrcp.cli validate-remediation --tracker outputs/ci-smoke/remediation-tracker.csv --allow-open
+          python -m nmrcp.cli validate-remediation --tracker examples/sample_remediation_tracker_closed.csv
+          python -m nmrcp.cli validate-signoffs --signoffs outputs/ci-smoke/owner-signoff-matrix.csv --allow-pending
+          python -m nmrcp.cli validate-signoffs --signoffs examples/sample_owner_signoffs_approved.csv
+          python -m nmrcp.cli validate-approval-exception-approvals --exceptions examples/sample_approval_exceptions_approved.csv --assessment outputs/ci-smoke/assessment.json
+          python -m nmrcp.cli generate-operator-review --dir outputs/ci-smoke --out outputs/ci-operator-review.template.csv
+          python -m nmrcp.cli validate-operator-review --review outputs/ci-operator-review.template.csv --allow-draft
+          python -m nmrcp.cli validate-operator-review --review examples/sample_operator_review_approved.csv
+          python -m nmrcp.cli generate-move-payload --plan outputs/ci-smoke/nutanix-move-plan.csv --config examples/sample_move_payload_config.json --out outputs/ci-smoke/move-api-payload.dry-run.json
+          python -m nmrcp.cli generate-move-payload --plan outputs/ci-smoke/nutanix-move-plan.csv --config examples/sample_move_payload_lab_config.json --out outputs/ci-smoke/move-api-payload.lab.dry-run.json
+          python -m nmrcp.cli generate-move-lab-proof-template --payload outputs/ci-smoke/move-api-payload.lab.dry-run.json --review examples/sample_move_submit_review.json --proof-scope approved_lab_move_appliance --out outputs/ci-smoke/move-lab-proof.template.json
+          python -m nmrcp.cli generate-move-lab-runbook --payload outputs/ci-smoke/move-api-payload.lab.dry-run.json --review examples/sample_move_submit_review.json --proof-template outputs/ci-smoke/move-lab-proof.template.json --out outputs/ci-smoke/move-lab-execution-runbook.md
+          python -m nmrcp.cli validate-move-lab-runbook --runbook outputs/ci-smoke/move-lab-execution-runbook.md
+          export NMRCP_MOVE_LAB_ACK=I_UNDERSTAND_LAB_ONLY
+          python -m nmrcp.cli generate-move-lab-capture-kit --payload outputs/ci-smoke/move-api-payload.lab.dry-run.json --review examples/sample_move_submit_review.json --out-dir outputs/ci-smoke/move-lab-capture-kit
+          python -m nmrcp.cli validate-move-lab-capture-kit --kit-dir outputs/ci-smoke/move-lab-capture-kit --payload outputs/ci-smoke/move-api-payload.lab.dry-run.json --out outputs/ci-smoke/move-lab-capture-kit-validation.json
+          python -m nmrcp.cli move-lab-evidence-preflight --payload outputs/ci-smoke/move-api-payload.lab.dry-run.json --review examples/sample_move_submit_review.json --capture-kit-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --transcript outputs/ci-smoke/move-lab-transcript.approved.example.json --transcript-validation outputs/ci-smoke/move-lab-transcript-validation.json --proof outputs/ci-smoke/move-lab-proof.approved.json --proof-validation outputs/ci-smoke/move-lab-proof-validation.json --evidence-intake outputs/ci-smoke/move-lab-evidence-intake.json --out outputs/ci-smoke/move-lab-evidence-preflight.json --report outputs/ci-smoke/move-lab-evidence-preflight.md
+          python -m nmrcp.cli validate-move-submit-readiness --payload outputs/ci-smoke/move-api-payload.lab.dry-run.json --review examples/sample_move_submit_review.json --out outputs/ci-smoke/move-submit-readiness.json
+          python -m nmrcp.cli move-lab-readiness-packet --payload outputs/ci-smoke/move-api-payload.lab.dry-run.json --review examples/sample_move_submit_review.json --move-submit-readiness outputs/ci-smoke/move-submit-readiness.json --capture-kit outputs/ci-smoke/move-lab-capture-kit --capture-kit-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --evidence-preflight outputs/ci-smoke/move-lab-evidence-preflight.json --evidence-preflight-report outputs/ci-smoke/move-lab-evidence-preflight.md --runbook outputs/ci-smoke/move-lab-execution-runbook.md --evidence-request outputs/ci-smoke/move-lab-evidence-request.md --closure-checklist outputs/ci-smoke/move-lab-closure-checklist.md --out outputs/ci-smoke/move-lab-readiness-packet.json --report outputs/ci-smoke/move-lab-readiness-packet.md
+          python -m nmrcp.cli validate-move-lab-readiness-packet --packet outputs/ci-smoke/move-lab-readiness-packet.json --report outputs/ci-smoke/move-lab-readiness-packet.md
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          payload = Path("outputs/ci-smoke/move-api-payload.lab.dry-run.json")
+          transcript = {
+              "schema_version": "nmrcp_move_lab_transcript_v1",
+              "proof_scope": "approved_lab_move_appliance",
+              "environment": "lab",
+              "lab_move_appliance": "move-lab-01",
+              "payload_sha256": hashlib.sha256(payload.read_bytes()).hexdigest(),
+              "dry_run_only": True,
+              "mutation_performed": False,
+              "production_targets": False,
+              "interactions": [
+                  {
+                      "name": "create-reviewed-dry-run-plan",
+                      "method": "POST",
+                      "path": "/api/move/lab/dry-run-plans",
+                      "status_code": 202,
+                      "dry_run": True,
+                      "mutating": False,
+                      "redacted": True,
+                  }
+              ],
+              "results": {
+                  "accepted_payloads": 1,
+                  "created_plans": 1,
+                  "started_migrations": 0,
+              },
+          }
+          Path("outputs/ci-smoke/move-lab-transcript.approved.example.json").write_text(json.dumps(transcript, indent=2), encoding="utf-8")
+          PY
+          python -m nmrcp.cli validate-move-lab-transcript --transcript outputs/ci-smoke/move-lab-transcript.approved.example.json --payload outputs/ci-smoke/move-api-payload.lab.dry-run.json --review examples/sample_move_submit_review.json --out outputs/ci-smoke/move-lab-transcript-validation.json
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          payload = json.loads(Path("outputs/ci-smoke/move-api-payload.lab.dry-run.json").read_text(encoding="utf-8"))
+          payload.pop("operator_notes", None)
+          generated_payload = Path("outputs/ci-smoke/move-api-payload.generated-proof-rehearsal.json")
+          generated_payload.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+          transcript = {
+              "schema_version": "nmrcp_move_lab_transcript_v1",
+              "proof_scope": "approved_lab_move_appliance",
+              "evidence_state": "captured_approved_lab",
+              "environment": "lab",
+              "lab_move_appliance": "move-lab-01",
+              "payload_sha256": hashlib.sha256(generated_payload.read_bytes()).hexdigest(),
+              "dry_run_only": True,
+              "mutation_performed": False,
+              "production_targets": False,
+              "interactions": [
+                  {
+                      "name": "create-reviewed-dry-run-plan",
+                      "method": "POST",
+                      "path": "/api/move/lab/dry-run-plans",
+                      "status_code": 202,
+                      "dry_run": True,
+                      "mutating": False,
+                      "redacted": True,
+                      "request_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                      "response_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  }
+              ],
+              "results": {
+                  "accepted_payloads": 1,
+                  "created_plans": 1,
+                  "started_migrations": 0,
+              },
+          }
+          Path("outputs/ci-smoke/move-lab-transcript.generated-proof-rehearsal.json").write_text(json.dumps(transcript, indent=2), encoding="utf-8")
+          PY
+          python -m nmrcp.cli validate-move-lab-transcript --transcript outputs/ci-smoke/move-lab-transcript.generated-proof-rehearsal.json --payload outputs/ci-smoke/move-api-payload.generated-proof-rehearsal.json --review examples/sample_move_submit_review.json --out outputs/ci-smoke/move-lab-transcript-validation.generated-proof-rehearsal.json
+          python -m nmrcp.cli generate-approved-move-lab-proof --payload outputs/ci-smoke/move-api-payload.generated-proof-rehearsal.json --review examples/sample_move_submit_review.json --transcript outputs/ci-smoke/move-lab-transcript.generated-proof-rehearsal.json --transcript-validation outputs/ci-smoke/move-lab-transcript-validation.generated-proof-rehearsal.json --approved-by "CI Lab Reviewer" --out outputs/ci-smoke/move-lab-proof.generated-approved.json
+          python -m nmrcp.cli validate-move-lab-proof --proof outputs/ci-smoke/move-lab-proof.generated-approved.json --payload outputs/ci-smoke/move-api-payload.generated-proof-rehearsal.json --review examples/sample_move_submit_review.json --transcript-validation outputs/ci-smoke/move-lab-transcript-validation.generated-proof-rehearsal.json --out outputs/ci-smoke/move-lab-proof-validation.generated-approved.json
+          python -m nmrcp.cli validate-move-lab-evidence-intake --payload outputs/ci-smoke/move-api-payload.generated-proof-rehearsal.json --review examples/sample_move_submit_review.json --transcript outputs/ci-smoke/move-lab-transcript.generated-proof-rehearsal.json --transcript-validation outputs/ci-smoke/move-lab-transcript-validation.generated-proof-rehearsal.json --proof outputs/ci-smoke/move-lab-proof.generated-approved.json --proof-validation outputs/ci-smoke/move-lab-proof-validation.generated-approved.json --capture-kit-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --out outputs/ci-smoke/move-lab-evidence-intake.generated-proof-rehearsal.json
+          python -m nmrcp.cli validate-move-lab-proof --proof examples/sample_move_lab_proof_simulated.json --payload outputs/ci-smoke/move-api-payload.lab.dry-run.json --review examples/sample_move_submit_review.json --out outputs/ci-smoke/move-lab-proof-validation.simulated.json
+          unset NMRCP_MOVE_LAB_ACK
+          python -m nmrcp.cli doctor
+          python -m nmrcp.cli verify-evidence --dir outputs/ci-smoke
+          python -m nmrcp.cli review-evidence --dir outputs/ci-smoke
+          python -m nmrcp.cli package-evidence --dir outputs/ci-smoke --out outputs/ci-evidence-bundle.zip
+          python -m nmrcp.cli verify-evidence --bundle outputs/ci-evidence-bundle.zip
+          python -m nmrcp.cli change-gate --dir outputs/ci-smoke --bundle outputs/ci-evidence-bundle.zip
+          python -m nmrcp.cli change-gate --dir outputs/ci-smoke --bundle outputs/ci-evidence-bundle.zip --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review examples/sample_operator_review_approved.csv --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json
+          python -m nmrcp.cli change-gate --dir outputs/ci-smoke --bundle outputs/ci-evidence-bundle.zip --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review examples/sample_operator_review_approved.csv --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --json > outputs/ci-change-gate-final.json
+          python -m nmrcp.cli validate-warning-acceptance --acceptance examples/sample_change_gate_warning_acceptance.csv --warnings outputs/ci-change-gate-final.json
+          python -m nmrcp.cli package-handoff --dir outputs/ci-smoke --bundle outputs/ci-evidence-bundle.zip --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review examples/sample_operator_review_approved.csv --move-lab-capture-kit outputs/ci-smoke/move-lab-capture-kit --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --move-lab-readiness-packet outputs/ci-smoke/move-lab-readiness-packet.json --source-collection-plan outputs/ci-source-collection-plan.md --move-payload outputs/ci-smoke/move-api-payload.dry-run.json --out outputs/ci-handoff-package.zip
+          python -m nmrcp.cli verify-handoff --package outputs/ci-handoff-package.zip
+          python -m nmrcp.cli mvp-audit --repo-root . --assessment-dir outputs/ci-smoke --live-proof outputs/ci-live-proof-validation.json --evidence-bundle outputs/ci-evidence-bundle.zip --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review examples/sample_operator_review_approved.csv --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --warning-acceptance examples/sample_change_gate_warning_acceptance.csv --out outputs/ci-mvp-audit.json
+          python -m nmrcp.cli validate-operator-gate-summary --summary outputs/ci-smoke/operator-gate-summary.md
+          python -m nmrcp.cli external-proof-plan --repo-root . --live-proof outputs/ci-live-proof-validation.json --move-proof outputs/ci-smoke/move-lab-proof-validation.simulated.json --out outputs/ci-external-proof-plan.md --json-out outputs/ci-external-proof-plan.json
+          python -m nmrcp.cli validate-external-proof-plan --repo-root . --live-proof outputs/ci-live-proof-validation.json --move-proof outputs/ci-smoke/move-lab-proof-validation.simulated.json --report outputs/ci-external-proof-plan.md --json-report outputs/ci-external-proof-plan.json
+          python -m nmrcp.cli package-mvp-proof --mvp-audit outputs/ci-mvp-audit.json --live-proof outputs/ci-live-proof-validation.json --move-submit-readiness outputs/ci-smoke/move-submit-readiness.json --move-lab-transcript outputs/ci-smoke/move-lab-transcript-validation.json --move-lab-proof outputs/ci-smoke/move-lab-proof-validation.simulated.json --move-lab-runbook outputs/ci-smoke/move-lab-execution-runbook.md --move-lab-closure-checklist outputs/ci-smoke/move-lab-closure-checklist.md --move-lab-capture-kit outputs/ci-smoke/move-lab-capture-kit --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --move-lab-readiness-packet outputs/ci-smoke/move-lab-readiness-packet.json --source-collection-plan outputs/ci-source-collection-plan.md --source-endpoint-evidence-request outputs/ci-smoke/source-endpoint-evidence-request.md --move-lab-evidence-request outputs/ci-smoke/move-lab-evidence-request.md --operator-gate-summary outputs/ci-smoke/operator-gate-summary.md --handoff-package outputs/ci-handoff-package.zip --external-proof-plan outputs/ci-external-proof-plan.json --out outputs/ci-mvp-proof-package.zip
+          python -m nmrcp.cli verify-mvp-proof --package outputs/ci-mvp-proof-package.zip
+          python -m nmrcp.cli summarize-mvp-proof --package outputs/ci-mvp-proof-package.zip --out outputs/ci-mvp-proof-summary.md
+          python -m nmrcp.cli validate-mvp-proof-summary --package outputs/ci-mvp-proof-package.zip --summary outputs/ci-mvp-proof-summary.md
+          python -m nmrcp.cli mvp-closure-report --package outputs/ci-mvp-proof-package.zip --out outputs/ci-mvp-closure-report.md --json-out outputs/ci-mvp-closure-report.json
+          python -m nmrcp.cli validate-mvp-closure-report --package outputs/ci-mvp-proof-package.zip --report outputs/ci-mvp-closure-report.md --json-report outputs/ci-mvp-closure-report.json
+          python -m nmrcp.cli launch-readiness-report --package outputs/ci-mvp-proof-package.zip --repo-url https://github.com/VirtuArchitect/Nutanix-Migration-Readiness-Control-Plane --out outputs/ci-launch-readiness-report.md --json-out outputs/ci-launch-readiness-report.json
+          python -m nmrcp.cli validate-launch-readiness-report --package outputs/ci-mvp-proof-package.zip --report outputs/ci-launch-readiness-report.md --json-report outputs/ci-launch-readiness-report.json
+          grep -q '"external_handoff_decision": "blocked_for_external_handoff"' outputs/ci-launch-readiness-report.json
+          grep -q 'External handoff decision: `blocked_for_external_handoff`' outputs/ci-launch-readiness-report.md
+          python -m nmrcp.cli run-assessment --inventory examples/sample_inventory.json --metadata examples/sample_metadata.csv --dependencies examples/sample_dependencies.csv --capacity examples/sample_target_capacity.json --prism-inventory examples/sample_prism_inventory.json --source-networks outputs/live-collector-smoke/vcenter-networks.json --move-config examples/sample_move_payload_config.json --validation-results examples/sample_validation_results.csv --remediation-tracker examples/sample_remediation_tracker_closed.csv --signoffs examples/sample_owner_signoffs_approved.csv --approval-exceptions examples/sample_approval_exceptions_approved.csv --operator-review examples/sample_operator_review_approved.csv --move-lab-capture-kit outputs/ci-smoke/move-lab-capture-kit --move-lab-capture-validation outputs/ci-smoke/move-lab-capture-kit-validation.json --out outputs/ci-workflow
+          test -f outputs/ci-workflow/operator-gate-summary.md
+          test -f outputs/ci-workflow-handoff-package.zip
+          test -f outputs/ci-mvp-proof-package.zip
+          test -f outputs/ci-mvp-proof-summary.md
+          test -f outputs/ci-external-proof-plan.json
+          test -f outputs/ci-mvp-closure-report.md
+          test -f outputs/ci-launch-readiness-report.md
+          test -f outputs/ci-smoke/move-lab-evidence-preflight.json
+          test -f outputs/ci-smoke/move-lab-evidence-preflight.md
+          test -f outputs/ci-smoke/move-lab-readiness-packet.json
+          test -f outputs/ci-smoke/move-lab-readiness-packet.md
+          test -f outputs/ci-assessment-intake.template.csv
+          test -f outputs/ci-cmdb-metadata.csv

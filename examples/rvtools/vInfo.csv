@@ -1,0 +1,4 @@
+VM,VM UUID,Powerstate,CPUs,Memory,Provisioned MiB,OS according to the VMware Tools,Tools,Annotation
+app-01,rvtools-app-01,poweredOn,4,8192,51200,Microsoft Windows Server 2019,toolsOk,"owner:apps;tier:critical;backup:protected;backup_last_success_hours:4;vendor_support:ahv,nc2;virtio_ready:true"
+db-01,rvtools-db-01,poweredOn,8,32768,204800,Red Hat Enterprise Linux 8,toolsOld,"owner:data;tier:critical;backup:protected;backup_last_success_hours:36;vendor_support:nc2"
+legacy-01,rvtools-legacy-01,poweredOff,2,4096,40960,Microsoft Windows Server 2008,not installed,"owner:legacy;tier:standard"

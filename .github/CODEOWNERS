@@ -1,0 +1,14 @@
+# Default review routing for this repository.
+* @VirtuArchitect
+
+# Safety-sensitive product surfaces.
+/src/nmrcp/connectors.py @VirtuArchitect
+/src/nmrcp/collection_workflow.py @VirtuArchitect
+/src/nmrcp/move_payload.py @VirtuArchitect
+/src/nmrcp/move_submit_readiness.py @VirtuArchitect
+/src/nmrcp/move_lab_proof.py @VirtuArchitect
+/src/nmrcp/redaction.py @VirtuArchitect
+/src/nmrcp/redaction_review.py @VirtuArchitect
+/docs/security/ @VirtuArchitect
+/SECURITY.md @VirtuArchitect
+/SECURITY_REVIEW.md @VirtuArchitect

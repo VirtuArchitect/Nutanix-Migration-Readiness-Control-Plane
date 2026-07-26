@@ -1,0 +1,4 @@
+VM,Network
+app-01,Prod Distributed Portgroup
+db-01,NSX-Overlay-Tier1
+legacy-01,Legacy VLAN 42

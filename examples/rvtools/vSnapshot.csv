@@ -1,0 +1,4 @@
+VM,Name,Date / Time
+app-01,before-maintenance,2026-07-01 20:00
+legacy-01,old-snapshot,2026-06-01 21:00
+legacy-01,older-snapshot,2026-05-01 21:00

@@ -1,0 +1,5 @@
+source_id,source_name,dependency_name,dependency_id,dependency_type,owner,criticality,protocol,ports,direction,validation_method,notes
+vm-1001,pilot-web-01,pilot-db-01,vm-1002,database,Platform Team,medium,tcp,5432,egress,application_owner_test,App connection string must be validated after cutover
+vm-2020,erp-app-01,erp-db-01,vm-2021,database,Database Team,high,tcp,1433,egress,application_owner_test,Database wave must precede application wave
+vm-3030,payments-edge-01,external-hsm,,external-service,,critical,,,egress,,Owner missing intentionally for readiness validation
+vm-9999,unknown-vm,orphan-service,,external-service,Unknown,low,tcp,443,egress,synthetic_probe,Unmatched sample record

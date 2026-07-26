@@ -1,0 +1,102 @@
+{
+  "source": {
+    "system": "prism-central-v3",
+    "endpoint": "https://prism-central.example.com:9440",
+    "collected_at": "2026-07-24T10:00:00Z",
+    "mode": "read-only",
+    "collection_audit": {
+      "schema": "nmrcp_collection_audit_v1",
+      "mode": "read-only",
+      "credential_storage": "not_persisted",
+      "endpoint_configured": true,
+      "api_paths": ["/api/nutanix/v3/vms/list"],
+      "page_size": 500,
+      "max_pages": 20,
+      "entities_count": 2,
+      "post_paths_allowlisted": true,
+      "mutating_calls": 0
+    }
+  },
+  "workloads": [
+    {
+      "id": "uuid-existing-erp",
+      "name": "erp-app-01",
+      "owner": "Business Apps",
+      "tier": "critical",
+      "guest_os": "Windows Server 2019",
+      "cpu": 8,
+      "memory_gib": 64,
+      "disk_gib": 900,
+      "storage": {
+        "disk_count": 4,
+        "thin_provisioned": true,
+        "raw_device_mapping": false,
+        "shared_disk": false,
+        "independent_disk": false,
+        "encrypted": false,
+        "storage_containers": ["container-prod"]
+      },
+      "power_state": "ON",
+      "tags": ["Owner:Business Apps"],
+      "networking": {
+        "uses_vds": false,
+        "uses_nsx": false,
+        "vlans": ["vlan-310"]
+      },
+      "snapshots": {
+        "count": 0
+      },
+      "tools": {
+        "vmware_tools": false,
+        "virtio_ready": true,
+        "status": ""
+      },
+      "backup": {
+        "protected": true,
+        "last_success_hours": 4
+      },
+      "vendor_support": ["ahv", "nc2"],
+      "dependencies": []
+    },
+    {
+      "id": "uuid-native-ops",
+      "name": "native-ops-01",
+      "owner": "Platform Team",
+      "tier": "noncritical",
+      "guest_os": "Ubuntu Linux 22.04",
+      "cpu": 2,
+      "memory_gib": 8,
+      "disk_gib": 80,
+      "storage": {
+        "disk_count": 1,
+        "thin_provisioned": true,
+        "raw_device_mapping": false,
+        "shared_disk": false,
+        "independent_disk": false,
+        "encrypted": false,
+        "storage_containers": ["container-prod"]
+      },
+      "power_state": "ON",
+      "tags": ["Owner:Platform Team"],
+      "networking": {
+        "uses_vds": false,
+        "uses_nsx": false,
+        "vlans": ["vlan-120"]
+      },
+      "snapshots": {
+        "count": 0
+      },
+      "tools": {
+        "vmware_tools": false,
+        "virtio_ready": true,
+        "status": ""
+      },
+      "backup": {
+        "protected": true,
+        "last_success_hours": 3
+      },
+      "vendor_support": ["ahv", "nc2"],
+      "dependencies": []
+    }
+  ]
+}

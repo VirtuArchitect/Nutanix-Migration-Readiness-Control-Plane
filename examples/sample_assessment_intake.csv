@@ -1,0 +1,15 @@
+schema_version,field,value,required,description
+nmrcp_assessment_intake_v1,customer_or_program,Sample VMware Exit Wave 0,true,"Customer, partner, or migration program label. Do not enter secrets or endpoint URLs."
+nmrcp_assessment_intake_v1,assessment_owner,Migration Factory Team,true,Responsible person or team for this assessment.
+nmrcp_assessment_intake_v1,migration_target,both,true,"One of ahv, nc2, or both."
+nmrcp_assessment_intake_v1,source_scope,"Sample vCenter export: pilot application VMs only",true,"Source estate scope, such as clusters, folders, waves, or excluded environments."
+nmrcp_assessment_intake_v1,target_scope,"Sample Prism Central lab and NC2 planning targets",true,"Target Prism Central, AHV, or NC2 scope by non-secret label only."
+nmrcp_assessment_intake_v1,dependency_source,"RVTools plus application workshop dependency map",true,"Dependency source such as app map, CMDB, RVTools, workshop, or manual review."
+nmrcp_assessment_intake_v1,planned_assessment_window,CHG-2026-SAMPLE-WAVE0,true,Planned assessment window or change reference.
+nmrcp_assessment_intake_v1,secrets_stay_local_ack,true,true,Set true to confirm credentials remain local and are never committed.
+nmrcp_assessment_intake_v1,redacted_evidence_ack,true,true,Set true to confirm evidence will be redacted before sharing.
+nmrcp_assessment_intake_v1,read_only_collection_ack,true,true,Set true to confirm vCenter and Prism collection is read-only.
+nmrcp_assessment_intake_v1,no_production_mutation_ack,true,true,Set true to confirm the assessment will not mutate production systems.
+nmrcp_assessment_intake_v1,rvtools_export_available,true,false,Optional true or false flag for offline RVTools input.
+nmrcp_assessment_intake_v1,approved_move_lab_available,false,false,Optional true or false flag for approved non-production Move proof window.
+nmrcp_assessment_intake_v1,notes,"Synthetic sample only; no endpoints or secrets.",false,Optional non-secret implementation notes.

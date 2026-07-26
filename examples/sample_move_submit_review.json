@@ -1,0 +1,14 @@
+{
+  "schema_version": "nmrcp_move_submit_review_v1",
+  "environment": "lab",
+  "reviewed_by": "Migration Lab Operator",
+  "reviewed_at": "2026-07-24T14:00:00Z",
+  "lab_move_appliance": "move-lab-01.example.test",
+  "approvals": {
+    "payload_reviewed": true,
+    "network_mapping_reviewed": true,
+    "rollback_reviewed": true,
+    "no_production_submit": true
+  },
+  "notes": "Synthetic lab review record for local validation only."
+}

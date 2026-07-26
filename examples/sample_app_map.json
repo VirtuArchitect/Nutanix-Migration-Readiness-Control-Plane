@@ -1,0 +1,46 @@
+{
+  "schema_version": "nmrcp_app_map_v1",
+  "source": "synthetic-application-map",
+  "applications": [
+    {
+      "source_id": "vm-1001",
+      "source_name": "pilot-web-01",
+      "dependencies": [
+        {
+          "name": "pilot-db-01",
+          "id": "vm-1002",
+          "type": "database",
+          "owner": "Platform Team",
+          "criticality": "medium",
+          "notes": "Imported from synthetic application map."
+        },
+        {
+          "name": "directory-01",
+          "type": "identity",
+          "owner": "Identity Team",
+          "criticality": "high"
+        }
+      ]
+    },
+    {
+      "source_name": "payments-edge-01",
+      "dependencies": [
+        {
+          "name": "external-hsm",
+          "type": "external-service",
+          "criticality": "critical"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source_name": "erp-app-01",
+      "target_name": "erp-db-01",
+      "relationship": "database",
+      "owner": "Database Team",
+      "criticality": "critical",
+      "notes": "Imported from synthetic edge list."
+    }
+  ]
+}

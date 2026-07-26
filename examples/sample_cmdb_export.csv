@@ -1,0 +1,5 @@
+VM UUID,VM Name,Application,Environment,Service Owner,Business Criticality,Backup Status,Backup Age Hours,Target Support,VirtIO Ready,Migration Approved,Rollback Group,Comments
+vm-1001,pilot-web-01,Pilot Portal,dev,Platform Team,low,protected,6,"AHV,NC2",yes,approved,Platform Team,Synthetic CMDB export row
+vm-2020,erp-app-01,ERP,prod,Business Apps,critical,protected,4,AHV,ready,yes,Business Apps,Owner-approved remediation override sample
+vm-3030,payments-edge-01,Payments,prod,Payments,critical,unprotected,0,VMware,no,no,,Requires NSX redesign
+vm-9999,retired-vm,Retired,retired,Retired Apps,low,protected,12,AHV,yes,yes,Retired Apps,Unmatched sample record
