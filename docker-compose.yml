@@ -1,0 +1,13 @@
+services:
+  nmrcp-console:
+    build: .
+    image: nmrcp-console:local
+    ports:
+      - "8080:8080"
+    environment:
+      NMRCP_HOST: "0.0.0.0"
+      NMRCP_PORT: "8080"
+      NMRCP_SITE_DIR: "/data/console-site"
+    volumes:
+      - ./data:/data
+    restart: unless-stopped

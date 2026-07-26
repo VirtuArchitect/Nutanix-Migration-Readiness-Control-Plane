@@ -10,6 +10,18 @@ Open the static operator console preview:
 The demo is generated from sample inventory only. It does not contact vCenter,
 Prism Central, Nutanix Move, AHV, NC2, or any customer environment.
 
+## Docker Console
+
+Run the local operations console in Docker:
+
+```powershell
+docker compose up --build
+```
+
+Then open `http://localhost:8080/`. The container serves the same local-first
+console and health endpoint without contacting infrastructure by itself. See
+`docs/operations/docker.md`.
+
 This project is a local-first readiness and evidence layer for teams planning
 VMware-to-Nutanix AHV or NC2 migrations. It does not replace Nutanix Move,
 Prism, or Nutanix Cloud Manager. It prepares operators, partners, and change

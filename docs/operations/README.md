@@ -861,6 +861,12 @@ fails validation until replaced with captured approved lab evidence.
 For structured pre/post validation evidence, see
 [validation-results.md](validation-results.md).
 
+## Docker Console
+
+Use [docker.md](docker.md) to run the operations console as a local container.
+The image serves the console over HTTP, exposes `/healthz`, and writes generated
+site files under a host-mounted data volume.
+
 ## Operations Console
 
 `operations-console.html` is generated with every assessment. It is a

@@ -84,6 +84,7 @@ from .risk_register import validate_risk_register
 from .rollback_plan import validate_rollback_plan
 from .rvtools import import_rvtools_directory
 from .scoring import assess_inventory, load_readiness_policy
+from .server import prepare_console_site, serve_console
 from .signoff import validate_signoff_matrix_contract, validate_signoffs
 from .source_endpoint_evidence_request import validate_source_endpoint_evidence_request
 from .source_collection_plan import validate_source_collection_plan, write_source_collection_plan
@@ -651,6 +652,13 @@ def main(argv: list[str] | None = None) -> int:
 
     doctor = subparsers.add_parser("doctor", help="Run local preflight checks without contacting endpoints")
     doctor.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+
+    serve = subparsers.add_parser("serve", help="Serve the local operations console over HTTP")
+    serve.add_argument("--host", default="127.0.0.1", help="Host interface to bind")
+    serve.add_argument("--port", type=int, default=8080, help="TCP port to bind")
+    serve.add_argument("--site-dir", type=Path, default=Path("outputs/console-site"), help="Writable console site directory")
+    serve.add_argument("--inventory", type=Path, default=Path("examples/sample_inventory.json"), help="Inventory JSON used to seed the console")
+    serve.add_argument("--generate-only", action="store_true", help="Generate the console site and exit without serving HTTP")
 
     github_readiness = subparsers.add_parser("github-readiness", help="Check local GitHub publication readiness")
     github_readiness.add_argument("--repo-root", type=Path, default=Path.cwd(), help="Repository root to inspect")
@@ -2027,6 +2035,13 @@ def main(argv: list[str] | None = None) -> int:
             for check in result["checks"]:
                 print(f"[{check['status']}] {check['name']}: {check['detail']}")
         return 0 if result["status"] == "pass" else 1
+    if args.command == "serve":
+        if args.generate_only:
+            manifest = prepare_console_site(args.site_dir, inventory_path=args.inventory)
+            print(json.dumps(manifest, indent=2))
+            return 0
+        serve_console(args.site_dir, host=args.host, port=args.port, inventory_path=args.inventory)
+        return 0
     if args.command == "mvp-audit":
         result = audit_mvp(
             args.repo_root,
