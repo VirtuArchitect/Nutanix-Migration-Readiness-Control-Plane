@@ -67,10 +67,12 @@ jobs:
           assert status == 200
           for expected in (
               "Test Read-only Connections",
+              "Validate Environment Gates",
               "Collect Source Evidence",
               "Run Readiness Assessment",
               "Prepare Tester Report",
               "font-family: Consolas",
+              "/api/environment-access",
               "/api/run-readiness",
               "/api/tester-report",
           ):

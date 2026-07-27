@@ -33,6 +33,10 @@ For external lab testers using the UI, start with
 console startup, the read-only connection workflow, redaction rules, expected
 runtime artifacts, and the GitHub tester report format.
 
+Before read/write connector workflows, validate selected environment gates with
+[environment-access-gates.md](environment-access-gates.md). The gate supports
+Dev, UAT, and Production profiles for PC, Move, vCenter, and ESXi targets.
+
 Before collection or offline import, generate and validate a customer or partner
 assessment intake:
 

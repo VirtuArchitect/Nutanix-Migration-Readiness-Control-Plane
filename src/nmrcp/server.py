@@ -8,6 +8,7 @@ from typing import Any
 
 from .collection_workflow import collect_sources
 from .connectors import EndpointConfig
+from .environment_access import environment_access_options, evaluate_environment_access
 from .evidence import write_assessment
 from .live_readiness import run_live_readiness
 from .operations_console import write_operations_console
@@ -47,7 +48,9 @@ def prepare_console_site(
             "/api/collect-sources",
             "/api/run-readiness",
             "/api/tester-report",
+            "/api/environment-access",
         ],
+        "environment_access": environment_access_options(),
     }
     (site_dir / "site-manifest.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return payload
@@ -104,6 +107,9 @@ class ConsoleRequestHandler(SimpleHTTPRequestHandler):
                 return
             if self.path == "/api/tester-report":
                 self.send_json(api_tester_report(self.data_dir()))
+                return
+            if self.path == "/api/environment-access":
+                self.send_json(api_environment_access(payload))
                 return
             self.send_json({"status": "fail", "errors": ["Unknown API endpoint"]}, status=404)
         except ValueError as exc:
@@ -221,6 +227,16 @@ def api_tester_report(data_dir: Path) -> dict[str, Any]:
         "summary": report["summary"],
         "missing_artifacts": report["missing_artifacts"],
     }
+
+
+def api_environment_access(payload: dict[str, Any]) -> dict[str, Any]:
+    result = evaluate_environment_access(
+        str(payload.get("environment") or "dev"),
+        str(payload.get("target") or "pc"),
+        str(payload.get("mode") or "read"),
+        payload.get("gates") if isinstance(payload.get("gates"), dict) else {},
+    )
+    return result.to_dict()
 
 
 def endpoint_config_from_payload(value: Any) -> EndpointConfig | None:

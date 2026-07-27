@@ -3,8 +3,11 @@
 `operations-console.html` is generated with every assessment. It is a local,
 dependency-free operator UI for the guided migration workflow:
 
-- Connect Environments: vCenter, Prism Central, Nutanix Move, and RVTools/import
-  sources are presented as explicit local connection panels.
+- Connect Environments: vCenter, Prism Central, Nutanix Move, ESXi, and
+  RVTools/import sources are presented as explicit local connection panels.
+- Environment Gates: operators select Dev, UAT, or Production, choose read or
+  write intent, select PC, Move, vCenter, or ESXi, and validate required gates
+  before connector workflows proceed.
 - Run Compatibility Analysis: operators can filter workload readiness, risk,
   wave placement, Move action, and top findings from the embedded assessment.
 - Build Move Plan: the console keeps the generated local run command and the
@@ -12,6 +15,9 @@ dependency-free operator UI for the guided migration workflow:
 
 When served with `nmrcp serve`, the console also exposes a tester workflow:
 
+- **Validate Environment Gates** posts to `/api/environment-access`, evaluates
+  the selected environment, target, mode, and supplied gates, and reports missing
+  approvals before read/write connectivity is attempted.
 - **Test Read-only Connections** posts to `/api/connection-test`, runs the
   existing redacted `live-readiness` checks, and writes local proof without
   serializing passwords, usernames, or endpoint values.
@@ -26,8 +32,9 @@ When served with `nmrcp serve`, the console also exposes a tester workflow:
   `tester-report.md` plus `tester-report.json` for GitHub tester feedback.
 
 The console does not persist credentials. Live vCenter/Prism proof and approved
-Nutanix Move lab evidence remain explicit gates; Nutanix Move connection and
-mutation are not enabled by this tester workflow.
+Nutanix Move lab evidence remain explicit gates. Write mode is gate evaluation
+only; Nutanix Move, Prism Central, vCenter, or ESXi mutation is not enabled by
+this tester workflow.
 
 Validate the generated console against `assessment.json`:
 

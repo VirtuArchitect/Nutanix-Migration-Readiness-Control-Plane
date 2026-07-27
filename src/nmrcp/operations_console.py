@@ -18,8 +18,10 @@ REQUIRED_TEXT = (
     "Connect Environments",
     "vCenter",
     "Prism Central",
+    "ESXi",
     "Nutanix Move",
     "RVTools / Import",
+    "Environment Gates",
     "Test Read-only Connections",
     "Collect Source Evidence",
     "Run Readiness Assessment",
@@ -31,6 +33,7 @@ REQUIRED_TEXT = (
     "/api/collect-sources",
     "/api/run-readiness",
     "/api/tester-report",
+    "/api/environment-access",
     "Environment connections are local-only and require explicit operator approval.",
     "Do not store credentials in the console or generated artifacts.",
     "Use approved read-only collection before claiming endpoint proof.",
@@ -183,6 +186,10 @@ def write_operations_console(
       background: white;
       color: var(--ink);
     }}
+    input[type="checkbox"] {{
+      width: auto;
+      margin: 0;
+    }}
     textarea {{ min-height: 88px; resize: vertical; }}
     #run-command {{
       min-height: 104px;
@@ -226,6 +233,19 @@ def write_operations_console(
       grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(120px, 180px));
       gap: 10px;
       margin-bottom: 12px;
+    }}
+    .gate-grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px 12px;
+      margin-bottom: 12px;
+    }}
+    .gate-grid label {{
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 26px;
+      font-weight: 600;
     }}
     .table-wrap {{
       border: 1px solid var(--line);
@@ -336,17 +356,42 @@ def write_operations_console(
             {connection_card("vcenter", "vCenter", "Read-only VM, network, guest, tools, snapshot, and dependency source.")}
             {connection_card("prism", "Prism Central", "Read-only AHV/NC2 target inventory, capacity, categories, and collision checks.")}
             {connection_card("move", "Nutanix Move", "Approved lab-only payload review and dry-run proof capture.")}
+            {connection_card("esxi", "ESXi", "Host-level connectivity gate for approved read or write-intent workflows.")}
             {connection_card("import", "RVTools / Import", "Offline CSV/JSON intake for discovery when live endpoints are not approved.")}
           </div>
           <div class="panel">
             <h3>Tester Connection Workflow</h3>
+            <div class="filters" aria-label="Environment gates">
+              <label>Environment<select id="environment-select"><option value="dev">Dev</option><option value="uat">UAT</option><option value="production">Production</option></select></label>
+              <label>Mode<select id="mode-select"><option value="read">Read</option><option value="write">Write intent</option></select></label>
+              <label>Target<select id="target-select"><option value="pc">Prism Central</option><option value="move">Nutanix Move</option><option value="vcenter">vCenter</option><option value="esxi">ESXi</option></select></label>
+            </div>
+            <div class="gate-grid" aria-label="Required environment gates">
+              <label><input type="checkbox" data-gate="source_scope_approved">Source scope approved</label>
+              <label><input type="checkbox" data-gate="credential_source_approved">Credential source approved</label>
+              <label><input type="checkbox" data-gate="change_reference">Change reference</label>
+              <label><input type="checkbox" data-gate="rollback_plan">Rollback plan</label>
+              <label><input type="checkbox" data-gate="write_scope_approved">Write scope approved</label>
+              <label><input type="checkbox" data-gate="operator_acknowledgement">Operator acknowledgement</label>
+              <label><input type="checkbox" data-gate="maintenance_window">Maintenance window</label>
+              <label><input type="checkbox" data-gate="peer_review">Peer review</label>
+              <label><input type="checkbox" data-gate="dry_run_passed">Dry run passed</label>
+              <label><input type="checkbox" data-gate="cab_approval">CAB approval</label>
+              <label><input type="checkbox" data-gate="backup_verified">Backup verified</label>
+              <label><input type="checkbox" data-gate="production_write_break_glass">Production write break-glass</label>
+              <label><input type="checkbox" data-gate="target_cluster_scope">Target cluster scope</label>
+              <label><input type="checkbox" data-gate="move_lab_or_approved_appliance">Move lab/appliance scope</label>
+              <label><input type="checkbox" data-gate="vm_scope_approved">VM scope approved</label>
+              <label><input type="checkbox" data-gate="host_scope_approved">Host scope approved</label>
+            </div>
             <div class="actions">
+              <button type="button" id="environment-access">Validate Environment Gates</button>
               <button type="button" id="test-connections">Test Read-only Connections</button>
               <button type="button" id="collect-sources" class="secondary">Collect Source Evidence</button>
               <button type="button" id="run-readiness" class="secondary">Run Readiness Assessment</button>
               <button type="button" id="tester-report" class="secondary">Prepare Tester Report</button>
             </div>
-            <p class="hint">These buttons call /api/connection-test, /api/collect-sources, /api/run-readiness, and /api/tester-report on this local console server. Passwords are sent only to the local process for the active request and are not written to proof files.</p>
+            <p class="hint">These buttons call /api/environment-access, /api/connection-test, /api/collect-sources, /api/run-readiness, and /api/tester-report on this local console server. Passwords are sent only to the local process for the active request and are not written to proof files. Write intent validates gates only; this workflow does not execute mutating actions.</p>
             <div class="proof" id="api-proof" role="status" aria-live="polite">Ready for tester input. API actions require the local nmrcp serve console. Use secure endpoints unless you are testing against a loopback simulator.</div>
           </div>
         </section>
@@ -370,11 +415,12 @@ def write_operations_console(
           <aside class="panel" id="workbench">
             <h2>Operator Workbench</h2>
             <ol class="steps">
-              <li><strong>1. Connect source</strong><br><span class="muted">Validate vCenter and Prism Central with read-only proof.</span></li>
-              <li><strong>2. Discover inventory</strong><br><span class="muted">Collect or import source workload, network, storage, and ownership data.</span></li>
-              <li><strong>3. Analyze compatibility</strong><br><span class="muted">Review AHV/NC2 readiness, dependencies, blockers, and what-will-break evidence.</span></li>
-              <li id="plan"><strong>4. Build Move Plan</strong><br><span class="muted">Stage only ready/research workloads into the Move plan after review.</span></li>
-              <li><strong>5. Package tester feedback</strong><br><span class="muted">Prepare a redacted local report for GitHub tester feedback.</span></li>
+              <li><strong>1. Select environment</strong><br><span class="muted">Choose Dev, UAT, or Production and validate read/write gates for PC, Move, vCenter, or ESXi.</span></li>
+              <li><strong>2. Connect source</strong><br><span class="muted">Validate vCenter and Prism Central with read-only proof.</span></li>
+              <li><strong>3. Discover inventory</strong><br><span class="muted">Collect or import source workload, network, storage, and ownership data.</span></li>
+              <li><strong>4. Analyze compatibility</strong><br><span class="muted">Review AHV/NC2 readiness, dependencies, blockers, and what-will-break evidence.</span></li>
+              <li id="plan"><strong>5. Build Move Plan</strong><br><span class="muted">Stage only ready/research workloads into the Move plan after review.</span></li>
+              <li><strong>6. Package tester feedback</strong><br><span class="muted">Prepare a redacted local report for GitHub tester feedback.</span></li>
             </ol>
             <h3>Generated local command</h3>
             <textarea id="run-command" spellcheck="false">python -m nmrcp.cli run-assessment --inventory examples/sample_inventory.json --metadata examples/sample_metadata.csv --dependencies examples/sample_dependencies.csv --move-config examples/sample_move_payload_config.json --out outputs/assessment</textarea>
@@ -421,6 +467,18 @@ def write_operations_console(
         timeout_seconds: Number(card.querySelector("[data-field='timeout']").value || 20)
       }};
     }}
+    function environmentAccessPayload() {{
+      const gates = {{}};
+      for (const gate of document.querySelectorAll("[data-gate]")) {{
+        gates[gate.dataset.gate] = gate.checked;
+      }}
+      return {{
+        environment: document.getElementById("environment-select").value,
+        mode: document.getElementById("mode-select").value,
+        target: document.getElementById("target-select").value,
+        gates
+      }};
+    }}
     function scrub(payload) {{
       return JSON.stringify(payload, (key, value) => key === "credential" ? "[request-only]" : value, 2);
     }}
@@ -463,6 +521,9 @@ def write_operations_console(
         const status = document.querySelector(`[data-connection="${{check.name === "prism-central" ? "prism" : check.name}}"] [data-status]`);
         if (status) status.textContent = check.status;
       }}
+    }}));
+    document.getElementById("environment-access").addEventListener("click", (event) => runAction(event.currentTarget, async () => {{
+      await postJson("/api/environment-access", environmentAccessPayload());
     }}));
     document.getElementById("collect-sources").addEventListener("click", (event) => runAction(event.currentTarget, async () => {{
       await postJson("/api/collect-sources", {{
@@ -579,26 +640,27 @@ def summarize(assessments: list[WorkloadAssessment]) -> dict[str, int]:
 
 def connection_card(identifier: str, title: str, description: str) -> str:
     if identifier in {"move", "import"}:
-        endpoint_controls = """
-        <label>Endpoint<input type="text" autocomplete="off" placeholder="Optional local reference" disabled></label>
-        <label>Mode<select disabled><option>Not connected by this step</option></select></label>
-        """
+        controls = [
+            '        <label>Endpoint<input type="text" autocomplete="off" placeholder="Optional local reference" disabled></label>',
+            "        <label>Mode<select disabled><option>Not connected by this step</option></select></label>",
+        ]
     else:
-        endpoint_controls = """
-        <label>Endpoint<input data-field="endpoint" type="text" autocomplete="off" placeholder="Approved endpoint URL"></label>
-        <label>Username<input data-field="username" type="text" autocomplete="username" placeholder="Read-only account"></label>
-        <label>Password<input data-field="credential" type="password" autocomplete="current-password" placeholder="Request-only credential"></label>
-        <label>TLS verification<input data-field="verify_tls" type="checkbox" checked></label>
-        <label>Timeout seconds<input data-field="timeout" type="number" min="1" value="20"></label>
-        """
-    return f"""
-      <article class="connection" data-connection="{escape(identifier)}">
-        <h3>{escape(title)}</h3>
-        <p class="muted">{escape(description)}</p>
-        {endpoint_controls}
-        <p class="meta">Status: <span data-status>Not configured</span></p>
-      </article>
-    """
+        controls = [
+            '        <label>Endpoint<input data-field="endpoint" type="text" autocomplete="off" placeholder="Approved endpoint URL"></label>',
+            '        <label>Username<input data-field="username" type="text" autocomplete="username" placeholder="Read-only account"></label>',
+            '        <label>Password<input data-field="credential" type="password" autocomplete="current-password" placeholder="Request-only credential"></label>',
+            '        <label>TLS verification<input data-field="verify_tls" type="checkbox" checked></label>',
+            '        <label>Timeout seconds<input data-field="timeout" type="number" min="1" value="20"></label>',
+        ]
+    lines = [
+        f'      <article class="connection" data-connection="{escape(identifier)}">',
+        f"        <h3>{escape(title)}</h3>",
+        f'        <p class="muted">{escape(description)}</p>',
+        *controls,
+        '        <p class="meta">Status: <span data-status>Not configured</span></p>',
+        "      </article>",
+    ]
+    return "\n".join(lines)
 
 
 def metric(label: str, value: int) -> str:

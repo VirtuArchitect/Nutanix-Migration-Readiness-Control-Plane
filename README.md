@@ -96,6 +96,9 @@ paths, the expected connection workflow, redaction rules, and what evidence to
 include in a tester connection report. After a local console run, testers can
 select **Prepare Tester Report** in the UI or run `tester-report` from the CLI
 to generate a redacted local feedback summary.
+Use `docs/operations/environment-access-gates.md` to validate Dev, UAT, and
+Production read/write gates for PC, Move, vCenter, and ESXi before connector
+workflows proceed.
 
 Run the full assessment-to-handoff workflow:
 

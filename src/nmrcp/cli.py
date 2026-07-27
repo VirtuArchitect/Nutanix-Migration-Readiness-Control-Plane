@@ -23,6 +23,7 @@ from .dependency_sequence import validate_dependency_sequence
 from .dependency_review import validate_dependency_review
 from .dependencies import apply_dependency_readiness_gates, merge_dependencies, read_dependency_csv
 from .doctor import run_doctor
+from .environment_access import ENVIRONMENTS, MODES, TARGETS, evaluate_environment_access
 from .evidence_bundle import package_evidence, verify_evidence, verify_evidence_bundle
 from .executive_brief import validate_executive_brief
 from .external_proof_plan import build_external_proof_plan, validate_external_proof_plan
@@ -665,6 +666,13 @@ def main(argv: list[str] | None = None) -> int:
     tester_report.add_argument("--data-dir", type=Path, default=Path("outputs/console-site/data"), help="Console data directory to summarize")
     tester_report.add_argument("--out", required=True, type=Path, help="Markdown tester report output path")
     tester_report.add_argument("--json-out", type=Path, help="Optional JSON tester report output path")
+
+    environment_access = subparsers.add_parser("environment-access", help="Evaluate environment, target, mode, and approval gates before connectivity")
+    environment_access.add_argument("--environment", required=True, choices=ENVIRONMENTS, help="Environment profile")
+    environment_access.add_argument("--target", required=True, choices=TARGETS, help="Connector target")
+    environment_access.add_argument("--mode", required=True, choices=MODES, help="Connectivity intent")
+    environment_access.add_argument("--gate", action="append", default=[], help="Satisfied gate name or gate=value pair; repeat for each approval")
+    environment_access.add_argument("--json-out", type=Path, help="Optional JSON environment access report path")
 
     github_readiness = subparsers.add_parser("github-readiness", help="Check local GitHub publication readiness")
     github_readiness.add_argument("--repo-root", type=Path, default=Path.cwd(), help="Repository root to inspect")
@@ -2055,6 +2063,20 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Tester report JSON: {args.json_out}")
         print(f"Status: {report['status']}")
         return 0 if report["status"] == "ready_for_tester_feedback" else 1
+    if args.command == "environment-access":
+        result = evaluate_environment_access(args.environment, args.target, args.mode, parse_gate_args(args.gate)).to_dict()
+        if args.json_out:
+            args.json_out.parent.mkdir(parents=True, exist_ok=True)
+            args.json_out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+        print(f"Environment access: {result['status']}")
+        print(f"Environment: {result['environment']}")
+        print(f"Target: {result['target_label']}")
+        print(f"Mode: {result['mode']}")
+        if result["missing_gates"]:
+            print(f"Missing gates: {', '.join(result['missing_gates'])}")
+        for warning in result["warnings"]:
+            print(f"WARNING: {warning}")
+        return 0 if result["status"] == "pass" else 1
     if args.command == "mvp-audit":
         result = audit_mvp(
             args.repo_root,
@@ -2623,6 +2645,17 @@ def main(argv: list[str] | None = None) -> int:
 
     parser.error("Unknown command")
     return 2
+
+
+def parse_gate_args(values: list[str]) -> dict[str, str | bool]:
+    gates: dict[str, str | bool] = {}
+    for value in values:
+        if "=" in value:
+            key, gate_value = value.split("=", 1)
+            gates[key.strip()] = gate_value.strip()
+        else:
+            gates[value.strip()] = True
+    return {key: value for key, value in gates.items() if key}
 
 
 def endpoint_config(endpoint: str | None, username: str | None, password_env: str, verify_tls: bool) -> EndpointConfig:

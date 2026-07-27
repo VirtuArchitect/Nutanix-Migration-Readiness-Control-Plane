@@ -8,7 +8,7 @@ from unittest.mock import patch
 from http.server import ThreadingHTTPServer
 from urllib.request import Request
 
-from nmrcp.server import ConsoleRequestHandler, api_run_readiness, api_tester_report, safe_inventory_path
+from nmrcp.server import ConsoleRequestHandler, api_environment_access, api_run_readiness, api_tester_report, safe_inventory_path
 
 from nmrcp.cli import main
 from nmrcp.server import prepare_console_site
@@ -142,6 +142,21 @@ class ConsoleServerTests(unittest.TestCase):
             self.assertTrue((data_dir / "tester-report.md").exists())
             self.assertTrue((data_dir / "tester-report.json").exists())
             self.assertEqual(payload["summary"]["workloads"], 3)
+
+    def test_environment_access_api_blocks_missing_production_write_gates(self):
+        payload = api_environment_access(
+            {
+                "environment": "production",
+                "target": "pc",
+                "mode": "write",
+                "gates": {"source_scope_approved": True},
+            }
+        )
+
+        self.assertEqual(payload["schema_version"], "nmrcp_environment_access_v1")
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn("production_write_break_glass", payload["missing_gates"])
+        self.assertIn("target_cluster_scope", payload["missing_gates"])
 
     def test_inventory_path_is_limited_to_repo_or_console_data(self):
         with tempfile.TemporaryDirectory() as tmp:

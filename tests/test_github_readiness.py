@@ -16,7 +16,9 @@ class GitHubReadinessTests(unittest.TestCase):
             "docs/operations/github-readiness.md",
             "docs/operations/vault-readiness.md",
             "docs/operations/product-readiness.md",
+            "docs/operations/environment-access-gates.md",
             "src/nmrcp/github_readiness.py",
+            "src/nmrcp/environment_access.py",
             "src/nmrcp/vault_readiness.py",
             "src/nmrcp/product_readiness.py",
             "docs/operations/collection-proof-report.md",
@@ -28,6 +30,7 @@ class GitHubReadinessTests(unittest.TestCase):
             "tests/test_github_readiness.py",
             "tests/test_vault_readiness.py",
             "tests/test_product_readiness.py",
+            "tests/test_environment_access.py",
         ):
             self.assertIn(expected, REQUIRED_PUBLICATION_PATHS)
 

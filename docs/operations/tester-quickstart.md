@@ -30,13 +30,15 @@ http://localhost:8080/
 
 Then run the browser workflow:
 
-1. Enter approved vCenter and Prism Central connection details.
-2. Select **Test Read-only Connections**.
-3. Select **Collect Source Evidence** after the connection proof passes.
-4. Select **Run Readiness Assessment** to score the collected inventory.
-5. Select **Prepare Tester Report** to summarize the local redacted artifacts
+1. Select Dev, UAT, or Production, choose the target and read/write intent, then
+   select **Validate Environment Gates**.
+2. Enter approved vCenter and Prism Central connection details.
+3. Select **Test Read-only Connections**.
+4. Select **Collect Source Evidence** after the connection proof passes.
+5. Select **Run Readiness Assessment** to score the collected inventory.
+6. Select **Prepare Tester Report** to summarize the local redacted artifacts
    for GitHub feedback.
-6. Review blocked workloads, findings, waves, and generated evidence paths.
+7. Review blocked workloads, findings, waves, and generated evidence paths.
 
 The container writes runtime artifacts under the Compose-mounted `data`
 directory. The main files testers should inspect are:
@@ -80,6 +82,22 @@ python -m nmrcp.cli tester-report `
 
 The command returns success only when the expected connection proof, source
 collection proof, and readiness assessment artifacts are present and passing.
+
+To validate environment gates from the CLI:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m nmrcp.cli environment-access `
+  --environment uat `
+  --target pc `
+  --mode read `
+  --gate source_scope_approved `
+  --gate credential_source_approved `
+  --gate change_reference `
+  --json-out outputs\environment-access.json
+```
+
+See [environment-access-gates.md](environment-access-gates.md).
 
 ## What To Report
 

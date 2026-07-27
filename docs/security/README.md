@@ -86,6 +86,9 @@ substitute for human review before sharing artifacts outside the migration team.
 - Move submit readiness validation is lab-only, requires a separate review
   record and `NMRCP_MOVE_LAB_ACK=I_UNDERSTAND_LAB_ONLY`, and still does not
   connect to Nutanix Move.
+- Environment access validation gates Dev, UAT, and Production read/write
+  intent for PC, Move, vCenter, and ESXi. Write mode remains policy evaluation
+  only and does not execute mutating actions.
 - Migration runbooks are generated for human review and cannot execute
   migration actions.
 - Validation result templates are local CSVs; final validation fails closed on
