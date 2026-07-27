@@ -3,6 +3,7 @@
 Open the static operations console demo through GitHub Pages:
 
 [Operations Console Demo](https://virtuarchitect.github.io/Nutanix-Migration-Readiness-Control-Plane/)
+[Direct Console HTML](https://virtuarchitect.github.io/Nutanix-Migration-Readiness-Control-Plane/operations-console.html)
 
 If GitHub Pages is not enabled for the repository yet, the source HTML is here:
 [operations-console.html](operations-console.html)
