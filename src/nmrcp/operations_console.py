@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from . import __version__
 from .models import Wave, WorkloadAssessment
 
 
@@ -15,6 +16,11 @@ REQUIRED_TEXT = (
     "<!doctype html>",
     "<title>NMRCP Operations Console</title>",
     "Nutanix Migration Readiness Operations Console",
+    "NMRCP",
+    "Migration Readiness Control Plane",
+    "Independent migration readiness console",
+    "Version",
+    "Environment Gate",
     "Connect Environments",
     "vCenter",
     "Prism Central",
@@ -73,18 +79,21 @@ def write_operations_console(
   <style>
     :root {{
       color-scheme: light;
-      --ink: #17202a;
-      --muted: #5f6b78;
-      --line: #d8dde5;
-      --panel: #f5f7fa;
+      --ink: #17212b;
+      --muted: #607080;
+      --line: #d6dce4;
+      --panel: #f6f8fa;
       --surface: #ffffff;
-      --nav: #101820;
-      --nav-muted: #a7b3c2;
-      --accent: #1c6b8f;
-      --ready: #1f7a4d;
-      --research: #7b6114;
-      --prepare: #9b4a17;
-      --blocked: #a12828;
+      --rail: #111923;
+      --rail-2: #182330;
+      --rail-muted: #9aa8b7;
+      --accent: #14728c;
+      --accent-strong: #0f5d73;
+      --mark: #20a5b8;
+      --ready: #18704b;
+      --research: #7a6417;
+      --prepare: #9a4d1c;
+      --blocked: #a12a2a;
     }}
     * {{ box-sizing: border-box; }}
     body {{
@@ -93,31 +102,32 @@ def write_operations_console(
       font-size: 14px;
       line-height: 1.4;
       color: var(--ink);
-      background: var(--surface);
+      background: #eef2f5;
     }}
     .shell {{
       min-height: 100vh;
       display: grid;
-      grid-template-columns: 248px minmax(0, 1fr);
+      grid-template-columns: 260px minmax(0, 1fr);
     }}
     nav {{
-      background: var(--nav);
+      background: var(--rail);
       color: white;
-      padding: 22px 18px;
+      padding: 18px 16px;
       display: grid;
       align-content: start;
-      gap: 18px;
+      gap: 16px;
+      border-right: 1px solid #0b1118;
     }}
     nav h1 {{
-      font-size: 18px;
+      font-size: 15px;
       line-height: 1.25;
       margin: 0;
     }}
     nav a {{
       display: block;
-      color: var(--nav-muted);
+      color: var(--rail-muted);
       text-decoration: none;
-      padding: 9px 10px;
+      padding: 8px 10px;
       border-radius: 6px;
       font-weight: 700;
       font-size: 13px;
@@ -127,6 +137,54 @@ def write_operations_console(
       background: rgba(255,255,255,.1);
       outline: 2px solid transparent;
     }}
+    .brand {{
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }}
+    .brand-mark {{
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 8px;
+      background: var(--rail-2);
+      color: white;
+      font-weight: 800;
+      line-height: 1;
+    }}
+    .brand-mark span {{
+      display: block;
+      width: 18px;
+      height: 18px;
+      border: 3px solid var(--mark);
+      border-left-color: white;
+      transform: rotate(45deg);
+    }}
+    .brand small {{
+      display: block;
+      color: var(--rail-muted);
+      font-size: 11px;
+      line-height: 1.25;
+      margin-top: 3px;
+    }}
+    .rail-section {{
+      display: grid;
+      gap: 4px;
+    }}
+    .rail-status {{
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 8px;
+      background: var(--rail-2);
+      padding: 10px;
+      color: var(--rail-muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }}
     main {{
       min-width: 0;
       display: grid;
@@ -134,20 +192,49 @@ def write_operations_console(
     }}
     header {{
       border-bottom: 1px solid var(--line);
-      padding: 18px 24px;
+      padding: 14px 22px;
       display: flex;
       justify-content: space-between;
       gap: 16px;
       align-items: center;
+      background: var(--surface);
+    }}
+    .eyebrow {{
+      color: var(--accent-strong);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
     }}
     h2, h3, p {{ margin-top: 0; }}
     h2 {{ font-size: 17px; line-height: 1.25; margin-bottom: 12px; }}
     h3 {{ font-size: 13px; line-height: 1.25; margin-bottom: 8px; }}
     .content {{
-      padding: 22px 24px 32px;
+      padding: 18px 22px 28px;
       display: grid;
-      gap: 22px;
+      gap: 16px;
       align-content: start;
+    }}
+    .ops-ribbon {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 10px 12px;
+    }}
+    .ops-ribbon span {{
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }}
+    .ops-ribbon strong {{
+      display: block;
+      margin-top: 2px;
+      font-size: 13px;
     }}
     .status-strip {{
       display: grid;
@@ -156,10 +243,10 @@ def write_operations_console(
     }}
     .metric, .connection, .panel {{
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 7px;
       background: white;
     }}
-    .metric {{ padding: 12px; }}
+    .metric {{ padding: 10px 12px; }}
     .metric strong {{ display: block; font-size: 22px; line-height: 1.1; }}
     .muted, label, .meta, th, .hint {{ color: var(--muted); }}
     .connections {{
@@ -174,12 +261,21 @@ def write_operations_console(
       align-content: start;
       min-height: 228px;
     }}
+    .connection h3 {{
+      margin-bottom: 0;
+    }}
+    .connection .meta {{
+      border-top: 1px solid var(--line);
+      padding-top: 8px;
+      margin-bottom: 0;
+      font-weight: 700;
+    }}
     label {{ display: grid; gap: 5px; font-size: 12px; line-height: 1.25; font-weight: 700; }}
     input, select, textarea {{
       width: 100%;
       border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 9px 10px;
+      border-radius: 5px;
+      padding: 8px 9px;
       font: inherit;
       font-size: 13px;
       line-height: 1.3;
@@ -201,7 +297,7 @@ def write_operations_console(
     }}
     button {{
       border: 1px solid var(--accent);
-      border-radius: 6px;
+      border-radius: 5px;
       background: var(--accent);
       color: white;
       padding: 9px 11px;
@@ -227,7 +323,7 @@ def write_operations_console(
       grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
       gap: 14px;
     }}
-    .panel {{ padding: 14px; }}
+    .panel {{ padding: 13px; }}
     .filters {{
       display: grid;
       grid-template-columns: minmax(180px, 1fr) repeat(2, minmax(120px, 180px));
@@ -246,10 +342,11 @@ def write_operations_console(
       gap: 7px;
       min-height: 26px;
       font-weight: 600;
+      color: var(--ink);
     }}
     .table-wrap {{
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 7px;
       overflow: auto;
     }}
     table {{ width: 100%; border-collapse: collapse; min-width: 760px; }}
@@ -285,7 +382,7 @@ def write_operations_console(
     }}
     .steps li {{
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 7px;
       padding: 10px;
       background: var(--panel);
       font-size: 13px;
@@ -306,13 +403,15 @@ def write_operations_console(
     }}
     .proof {{
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 7px;
       background: var(--panel);
       padding: 12px;
       min-height: 120px;
       white-space: pre-wrap;
       overflow: auto;
       font-size: 12px;
+      font-family: Consolas, "Liberation Mono", monospace;
+      line-height: 1.35;
     }}
     @media (max-width: 960px) {{
       .shell, .workbench {{ display: block; }}
@@ -324,24 +423,38 @@ def write_operations_console(
 <body>
   <div class="shell">
     <nav aria-label="Primary">
-      <h1>Nutanix Migration Readiness Operations Console</h1>
-      <div>
+      <div class="brand" aria-label="NMRCP brand">
+        <div class="brand-mark" aria-hidden="true"><span></span></div>
+        <div>
+          <h1>NMRCP</h1>
+          <small>Migration Readiness Control Plane</small>
+        </div>
+      </div>
+      <div class="rail-section">
         <a href="#connect">Connect Environments</a>
         <a href="#analyze">Run Compatibility Analysis</a>
         <a href="#plan">Build Move Plan</a>
         <a href="#workbench">Operator Workbench</a>
       </div>
-      <p class="hint">Environment connections are local-only and require explicit operator approval.</p>
+      <div class="rail-status">Version {escape(payload["product_version"])}. Independent migration readiness console. Environment connections are local-only and require explicit operator approval.</div>
     </nav>
     <main>
       <header>
         <div>
+          <div class="eyebrow">Independent migration readiness console</div>
           <h2>Nutanix Migration Readiness Operations Console</h2>
           <p class="muted">Move-style guided assessment console for source discovery, compatibility analysis, wave planning, and evidence review.</p>
         </div>
         <button type="button" class="secondary" id="copy-command">Copy Run Command</button>
       </header>
       <section class="content">
+        <section class="ops-ribbon" aria-label="Operations context">
+          <div><span>Identity</span><strong>NMRCP Console</strong></div>
+          <div><span>Version</span><strong>{escape(payload["product_version"])}</strong></div>
+          <div><span>Mode</span><strong>Local-first evidence workflow</strong></div>
+          <div><span>Boundary</span><strong>Write intent is gated, not executed</strong></div>
+          <div><span>Audience</span><strong>Platform and migration operations</strong></div>
+        </section>
         <section class="status-strip" aria-label="Readiness summary">
           {metric("Workloads", payload["summary"]["total"])}
           {metric("Ready", payload["summary"]["ready"])}
@@ -605,6 +718,7 @@ def console_payload(inventory: dict[str, Any], assessments: list[WorkloadAssessm
     wave_by_workload = {workload_id: wave.name for wave in waves for workload_id in wave.workload_ids}
     return {
         "schema_version": OPERATIONS_CONSOLE_SCHEMA_VERSION,
+        "product_version": __version__,
         "summary": summarize(assessments),
         "connections": [
             {"id": "vcenter", "label": "vCenter", "mode": "read-only", "status": "not_configured"},

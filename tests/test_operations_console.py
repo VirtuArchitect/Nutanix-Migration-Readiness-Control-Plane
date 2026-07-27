@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from nmrcp import __version__
 from nmrcp.cli import main
 from nmrcp.evidence import write_assessment
 from nmrcp.operations_console import validate_operations_console
@@ -21,6 +22,13 @@ class OperationsConsoleTests(unittest.TestCase):
 
             self.assertTrue(result.ok, result.errors)
             self.assertIn("PASS", result.summary())
+            self.assertIn("NMRCP", console)
+            self.assertIn(f"Version {__version__}", console)
+            self.assertIn("Migration Readiness Control Plane", console)
+            self.assertIn("Independent migration readiness console", console)
+            self.assertIn("Write intent is gated, not executed", console)
+            self.assertIn("brand-mark", console)
+            self.assertIn("ops-ribbon", console)
             self.assertIn("Connect Environments", console)
             self.assertIn("vCenter", console)
             self.assertIn("Prism Central", console)

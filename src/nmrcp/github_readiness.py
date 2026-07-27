@@ -71,6 +71,7 @@ REQUIRED_PUBLICATION_PATHS: tuple[str, ...] = (
     "docs/operations/pull-request-readiness.md",
     "docs/operations/external-proof-plan.md",
     "docs/operations/environment-access-gates.md",
+    "docs/operations/version-control.md",
     "docs/operations/what-will-break-report.md",
     "docs/operations/move-staging-readiness.md",
     "docs/operations/source-collection-plan.md",

@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 
+from . import __version__
 from .assessment_intake import validate_assessment_intake, write_assessment_intake_template
 from .approval_exceptions import validate_approval_exception_approvals, validate_approval_exceptions
 from .app_map import read_app_map, write_dependency_csv
@@ -122,6 +123,8 @@ def main(argv: list[str] | None = None) -> int:
         description="Nutanix Migration & Readiness Control Plane local CLI",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    subparsers.add_parser("version", help="Print the NMRCP product version")
 
     assess = subparsers.add_parser("assess", help="Score a normalized inventory and export evidence")
     assess.add_argument("--inventory", required=True, type=Path, help="Path to normalized inventory JSON")
@@ -960,6 +963,10 @@ def main(argv: list[str] | None = None) -> int:
     gate.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
     args = parser.parse_args(argv)
+    if args.command == "version":
+        print(__version__)
+        return 0
+
     if args.command == "assess":
         inventory = json.loads(args.inventory.read_text(encoding="utf-8"))
         if args.metadata:

@@ -2,6 +2,8 @@
 
 Know exactly what will break before you migrate from VMware to Nutanix.
 
+Current version: `0.2.0`
+
 ## Console Demo
 
 Open the static operator console preview:
