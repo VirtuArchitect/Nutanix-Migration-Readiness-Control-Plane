@@ -16,6 +16,8 @@ assignees: ""
 ## Runtime
 
 - NMRCP commit or release:
+- NMRCP run ID:
+- NMRCP product version:
 - Runtime path: Docker Compose / Python / other approved path
 - Browser and OS:
 
@@ -31,6 +33,8 @@ assignees: ""
 - Test Read-only Connections: pass / fail / not run
 - Collect Source Evidence: pass / fail / not run
 - Run Readiness Assessment: pass / fail / not run
+- Environment gates validated: pass / blocked / not run
+- Environment and target tested: Dev / UAT / Production; PC / Move / vCenter / ESXi / AHV / NC2
 
 ## Readiness Summary
 

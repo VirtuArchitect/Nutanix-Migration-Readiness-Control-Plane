@@ -8,6 +8,7 @@ from unittest.mock import patch
 from http.server import ThreadingHTTPServer
 from urllib.request import Request
 
+from nmrcp import __version__
 from nmrcp.server import ConsoleRequestHandler, api_environment_access, api_run_readiness, api_tester_report, safe_inventory_path
 
 from nmrcp.cli import main
@@ -22,6 +23,7 @@ class ConsoleServerTests(unittest.TestCase):
             manifest = prepare_console_site(site_dir)
 
             self.assertEqual(manifest["status"], "ready")
+            self.assertEqual(manifest["product_version"], __version__)
             self.assertTrue((site_dir / "index.html").exists())
             self.assertTrue((site_dir / "operations-console.html").exists())
             payload = json.loads((site_dir / "site-manifest.json").read_text(encoding="utf-8"))
@@ -113,6 +115,7 @@ class ConsoleServerTests(unittest.TestCase):
             payload = api_run_readiness({}, data_dir, site_dir)
 
             self.assertEqual(payload["status"], "pass")
+            self.assertEqual(payload["product_version"], __version__)
             self.assertTrue((data_dir / "assessment" / "assessment.json").exists())
             self.assertTrue((site_dir / "operations-console.html").exists())
             self.assertEqual(payload["summary"]["workloads"], 3)

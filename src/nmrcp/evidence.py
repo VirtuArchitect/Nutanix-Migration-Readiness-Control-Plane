@@ -7,7 +7,9 @@ import html
 import json
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
+from . import __version__
 from .approval_exceptions import approval_exceptions_context, write_approval_exceptions_csv
 from .compatibility_research import compatibility_research_context, write_compatibility_research_csv
 from .connectivity_checklist import connectivity_checklist_context, write_connectivity_checklist_csv
@@ -39,6 +41,7 @@ from .what_will_break import what_will_break_context, write_what_will_break_brie
 
 
 MOVE_PLAN_SCHEMA_VERSION = "nmrcp_move_plan_v1"
+RUN_METADATA_SCHEMA_VERSION = "nmrcp_run_metadata_v1"
 
 
 def write_assessment(
@@ -51,6 +54,7 @@ def write_assessment(
     out_dir.mkdir(parents=True, exist_ok=True)
     coverage_rows = inventory_coverage_rows(inventory)
     payload = {
+        "run_metadata": build_run_metadata(inventory, assessments, waves),
         "source": redact_dict(inventory.get("source", {})),
         "summary": summarize(assessments),
         "inventory_coverage": summarize_inventory_coverage_rows(coverage_rows),
@@ -124,6 +128,23 @@ def write_assessment(
     write_move_lab_evidence_request(assessments, waves, out_dir / "move-lab-evidence-request.md")
     write_source_endpoint_evidence_request(assessments, out_dir / "source-endpoint-evidence-request.md")
     write_evidence_manifest(out_dir / "evidence-manifest.json", out_dir)
+
+
+def build_run_metadata(inventory: dict[str, Any], assessments: list[WorkloadAssessment], waves: list[Wave]) -> dict[str, Any]:
+    source = inventory.get("source") if isinstance(inventory.get("source"), dict) else {}
+    return {
+        "schema_version": RUN_METADATA_SCHEMA_VERSION,
+        "run_id": f"nmrcp-{uuid4()}",
+        "generated_at": datetime.now(UTC).isoformat(),
+        "product": "Nutanix Migration & Readiness Control Plane",
+        "product_version": __version__,
+        "workflow": "local-first-readiness-assessment",
+        "source_system": str(redact_dict(source).get("system") or "unknown"),
+        "workloads": len(assessments),
+        "waves": len(waves),
+        "secret_policy": "credentials_not_serialized",
+        "mutation_policy": "read_only_collection_write_intent_gated",
+    }
 
 
 def summarize(assessments: list[WorkloadAssessment]) -> dict[str, int]:

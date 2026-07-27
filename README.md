@@ -1,17 +1,34 @@
 # Nutanix Migration & Readiness Control Plane
 
-Know exactly what will break before you migrate from VMware to Nutanix.
+Know exactly what will break before you migrate from VMware to Nutanix, then
+turn that evidence into a controlled migration plan.
 
 Current version: `0.2.0`
 
+NMRCP is a local-first operations console and evidence engine for
+VMware-to-Nutanix AHV or NC2 migration readiness. It helps migration teams
+connect approved environments, collect read-only source and target evidence,
+score workload readiness, identify blockers, plan migration waves, prepare
+Nutanix Move handoff artifacts, and package redacted proof for testers, change
+boards, and platform owners.
+
+It is designed for operators: credentials stay local, customer inventory is
+treated as sensitive, read-only collection is the default, and write-intent
+workflows require explicit Dev, UAT, or Production gates before they can
+proceed.
+
 ## Console Demo
 
-Open the static operator console preview:
+Open the browser-only static operator console preview:
 [Operations Console Demo](https://virtuarchitect.github.io/Nutanix-Migration-Readiness-Control-Plane/)
 [Direct Console HTML](https://virtuarchitect.github.io/Nutanix-Migration-Readiness-Control-Plane/operations-console.html)
 
-The demo is generated from sample inventory only. It does not contact vCenter,
-Prism Central, Nutanix Move, AHV, NC2, or any customer environment.
+The GitHub Pages demo is generated from sample inventory and cannot contact
+infrastructure because it has no local API server behind it. To connect to
+vCenter, Prism Central, Nutanix Move, AHV, NC2, ESXi, or an approved customer
+environment, run the local served console through Docker or Python. That served
+console exposes the connection, collection, readiness, tester-report, and
+environment-gate APIs used by the UI.
 
 ## Docker Console
 
@@ -22,11 +39,14 @@ docker compose up --build
 ```
 
 Then open `http://localhost:8080/`. The container serves the same local-first
-console and health endpoint without contacting infrastructure by itself. In
-served mode, testers can use the browser to test approved read-only vCenter and
-Prism Central connections, collect local source evidence, and run readiness
-against collected inventory. See `docs/operations/docker.md` and the
-tester-facing quickstart in `docs/operations/tester-quickstart.md`.
+console and health endpoint without contacting infrastructure by itself. After
+an operator enters approved runtime connection details, testers can use the
+browser to test approved read-only vCenter and Prism Central connections,
+collect local source evidence, run readiness against collected inventory, and
+validate read/write-intent gates for PC, Move, vCenter, ESXi, AHV, NC2, and
+environment-specific workflows. See `docs/operations/docker.md`,
+`docs/operations/tester-quickstart.md`, and
+`docs/operations/tester-alpha-release.md`.
 
 This project is a local-first readiness and evidence layer for teams planning
 VMware-to-Nutanix AHV or NC2 migrations. It does not replace Nutanix Move,

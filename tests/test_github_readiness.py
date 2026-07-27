@@ -18,6 +18,8 @@ class GitHubReadinessTests(unittest.TestCase):
             "docs/operations/product-readiness.md",
             "docs/operations/environment-access-gates.md",
             "docs/operations/version-control.md",
+            "docs/operations/tester-alpha-release.md",
+            ".github/workflows/docker-publish.yml",
             "src/nmrcp/github_readiness.py",
             "src/nmrcp/environment_access.py",
             "src/nmrcp/vault_readiness.py",

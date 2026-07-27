@@ -1,0 +1,77 @@
+name: Publish Docker image
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to publish"
+        required: true
+        default: "0.2.0-alpha"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Resolve image tags
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER}/nutanix-migration-readiness-control-plane"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            tag="${GITHUB_REF_NAME#v}"
+            extra_tag="latest"
+          else
+            tag="${{ inputs.image_tag }}"
+            extra_tag="alpha"
+          fi
+          echo "image=${image,,}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "extra_tag=${extra_tag}" >> "$GITHUB_OUTPUT"
+      - name: Log in to GHCR
+        shell: bash
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build image
+        shell: bash
+        run: |
+          docker build \
+            -t "${{ steps.image.outputs.image }}:${{ steps.image.outputs.tag }}" \
+            -t "${{ steps.image.outputs.image }}:${{ steps.image.outputs.extra_tag }}" \
+            .
+      - name: Smoke image
+        shell: bash
+        run: |
+          docker run --rm -d --name nmrcp-publish-smoke -p 18080:8080 "${{ steps.image.outputs.image }}:${{ steps.image.outputs.tag }}"
+          trap 'docker stop nmrcp-publish-smoke >/dev/null 2>&1 || true' EXIT
+          python - <<'PY'
+          import json
+          import time
+          import urllib.request
+
+          for attempt in range(30):
+              try:
+                  with urllib.request.urlopen("http://127.0.0.1:18080/healthz", timeout=5) as response:
+                      payload = json.loads(response.read().decode("utf-8"))
+                  if payload.get("status") == "ok" and payload.get("product_version"):
+                      break
+              except Exception:
+                  if attempt == 29:
+                      raise
+                  time.sleep(1)
+          else:
+              raise AssertionError("container health check did not pass")
+          PY
+      - name: Push image
+        shell: bash
+        run: |
+          docker push "${{ steps.image.outputs.image }}:${{ steps.image.outputs.tag }}"
+          docker push "${{ steps.image.outputs.image }}:${{ steps.image.outputs.extra_tag }}"

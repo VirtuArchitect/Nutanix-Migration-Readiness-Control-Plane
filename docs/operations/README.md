@@ -32,6 +32,8 @@ For external lab testers using the UI, start with
 [tester-quickstart.md](tester-quickstart.md). It covers Docker and Python
 console startup, the read-only connection workflow, redaction rules, expected
 runtime artifacts, and the GitHub tester report format.
+For the release-level tester scope, Docker image publication path, and evidence
+versioning expectations, see [tester-alpha-release.md](tester-alpha-release.md).
 
 Before read/write connector workflows, validate selected environment gates with
 [environment-access-gates.md](environment-access-gates.md). The gate supports

@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from nmrcp import __version__
 from nmrcp.evidence import preferred_target, write_assessment
 from nmrcp.models import WorkloadAssessment
 from nmrcp.redaction import redact_dict
@@ -46,6 +47,11 @@ class WavesAndEvidenceTests(unittest.TestCase):
 
             self.assertTrue((out_dir / "assessment.json").exists())
             assessment_json = json.loads((out_dir / "assessment.json").read_text(encoding="utf-8"))
+            self.assertEqual(assessment_json["run_metadata"]["schema_version"], "nmrcp_run_metadata_v1")
+            self.assertEqual(assessment_json["run_metadata"]["product_version"], __version__)
+            self.assertEqual(assessment_json["run_metadata"]["workloads"], 3)
+            self.assertEqual(assessment_json["run_metadata"]["secret_policy"], "credentials_not_serialized")
+            self.assertEqual(assessment_json["run_metadata"]["mutation_policy"], "read_only_collection_write_intent_gated")
             self.assertIn("inventory_coverage", assessment_json)
             self.assertEqual(assessment_json["inventory_coverage"]["workloads"], 3)
             self.assertEqual(assessment_json["business_context"]["schema_version"], "nmrcp_business_context_v1")

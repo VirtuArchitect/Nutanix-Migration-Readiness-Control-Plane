@@ -3,10 +3,17 @@
 This quickstart is for approved lab testers who need to prove the console can
 connect, collect read-only source evidence, and generate readiness output.
 
+Use the Docker or Python served console for real connectivity. The GitHub Pages
+demo is a static preview only; it cannot connect to vCenter, Prism Central,
+Nutanix Move, AHV, NC2, ESXi, or customer environments without the local API
+server.
+
 ## Safety Rules
 
 - Use lab or explicitly approved source environments only.
 - Use read-only vCenter and Prism Central accounts.
+- Use environment gates before any read/write-intent workflow for PC, Move,
+  vCenter, ESXi, AHV, NC2, or production targets.
 - Do not paste credentials, endpoint names, FQDNs, IP addresses, or customer
   identifiers into GitHub issues.
 - Treat generated files as local evidence. Redact before sharing outside the
@@ -104,6 +111,7 @@ See [environment-access-gates.md](environment-access-gates.md).
 Open a **Tester Connection Report** issue and include:
 
 - Commit SHA or release tag tested.
+- NMRCP run ID and product version from `assessment/run_metadata`.
 - Runtime path: Docker Compose or Python.
 - Source type tested: vCenter, Prism Central, RVTools import, or sample data.
 - Whether connection proof, collection, and readiness assessment passed.

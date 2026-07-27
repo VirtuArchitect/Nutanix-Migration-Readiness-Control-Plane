@@ -44,6 +44,22 @@ With the included Compose file, that maps to `.\data` on the host. Runtime
 connection proofs and generated assessment artifacts are local-only runtime
 outputs and are not intended for source control.
 
+Published alpha images are produced by the GitHub `Publish Docker image`
+workflow:
+
+```text
+ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.2.0
+ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:alpha
+```
+
+Run a published image directly:
+
+```powershell
+docker run --rm -p 8080:8080 `
+  -v ${PWD}\data:/data `
+  ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.2.0
+```
+
 The image does not contact vCenter, Prism Central, Nutanix Move, AHV, or NC2 by
 itself. Live endpoint testing and collection require explicit operator action in
 the browser or CLI. Credentials are used only for the active local request; the

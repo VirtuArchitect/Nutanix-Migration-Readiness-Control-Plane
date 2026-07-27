@@ -6,6 +6,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from . import __version__
 from .collection_workflow import collect_sources
 from .connectors import EndpointConfig
 from .environment_access import environment_access_options, evaluate_environment_access
@@ -37,6 +38,7 @@ def prepare_console_site(
     payload = {
         "schema_version": SERVER_SCHEMA_VERSION,
         "status": "ready",
+        "product_version": __version__,
         "site_dir": str(site_dir.resolve()),
         "data_dir": str(data_dir.resolve()),
         "inventory_path": str(inventory_path),
@@ -201,6 +203,7 @@ def api_run_readiness(payload: dict[str, Any], data_dir: Path, site_dir: Path) -
     return {
         "schema_version": "nmrcp_console_readiness_run_v1",
         "status": "pass",
+        "product_version": __version__,
         "inventory_path": str(inventory_path),
         "assessment_dir": str(assessment_dir),
         "console": "operations-console.html",
