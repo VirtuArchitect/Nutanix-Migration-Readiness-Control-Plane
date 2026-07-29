@@ -76,6 +76,7 @@ from .owner_risk import validate_owner_risk_summary
 from .partner_handoff_matrix import validate_partner_handoff_matrix
 from .prism_categories import validate_prism_category_mapping
 from .product_readiness import check_product_readiness, validate_product_readiness_report
+from .providers import provider_catalog, source_provider_ids, target_provider_cli_choices
 from .publication_handoff import build_publication_handoff, validate_publication_handoff
 from .publication_staging import build_publication_staging_manifest, validate_publication_staging_manifest
 from .pull_request_readiness import build_pull_request_readiness, validate_pull_request_readiness
@@ -131,7 +132,8 @@ def main(argv: list[str] | None = None) -> int:
     assess.add_argument("--metadata", type=Path, help="Optional workload metadata CSV to merge before scoring")
     assess.add_argument("--dependencies", type=Path, help="Optional dependency CSV to merge before scoring")
     assess.add_argument("--out", required=True, type=Path, help="Output directory for evidence artifacts")
-    assess.add_argument("--target", default="ahv", choices=["ahv", "nc2"], help="Migration target")
+    assess.add_argument("--source", default="vmware_vcenter", choices=source_provider_ids(), help="Source provider")
+    assess.add_argument("--target", default="nutanix_ahv", choices=target_provider_cli_choices(), help="Target provider")
     assess.add_argument("--policy", type=Path, help="Optional readiness policy JSON file")
     assess.add_argument("--capacity", type=Path, help="Optional target capacity JSON for capacity-fit evidence")
     assess.add_argument("--strict-inventory", action="store_true", help="Fail assessment when inventory warnings exist")
@@ -141,7 +143,8 @@ def main(argv: list[str] | None = None) -> int:
     workflow.add_argument("--metadata", type=Path, help="Optional workload metadata CSV to merge before scoring")
     workflow.add_argument("--dependencies", type=Path, help="Optional dependency CSV to merge before scoring")
     workflow.add_argument("--out", required=True, type=Path, help="Assessment output directory")
-    workflow.add_argument("--target", default="ahv", choices=["ahv", "nc2"], help="Migration target")
+    workflow.add_argument("--source", default="vmware_vcenter", choices=source_provider_ids(), help="Source provider")
+    workflow.add_argument("--target", default="nutanix_ahv", choices=target_provider_cli_choices(), help="Target provider")
     workflow.add_argument("--policy", type=Path, help="Optional readiness policy JSON file")
     workflow.add_argument("--capacity", type=Path, help="Optional target capacity JSON for capacity-fit evidence")
     workflow.add_argument("--prism-inventory", type=Path, help="Optional Prism inventory JSON for target reconciliation")
@@ -658,6 +661,8 @@ def main(argv: list[str] | None = None) -> int:
     doctor = subparsers.add_parser("doctor", help="Run local preflight checks without contacting endpoints")
     doctor.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
 
+    subparsers.add_parser("providers", help="List supported source and target providers")
+
     serve = subparsers.add_parser("serve", help="Serve the local operations console over HTTP")
     serve.add_argument("--host", default="127.0.0.1", help="Host interface to bind")
     serve.add_argument("--port", type=int, default=8080, help="TCP port to bind")
@@ -982,7 +987,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"ERROR: {error}")
             return 1
         policy = load_readiness_policy(args.policy)
-        assessments = assess_inventory(inventory, target=args.target, policy=policy)
+        assessments = assess_inventory(inventory, source=args.source, target=args.target, policy=policy)
         assessments = apply_dependency_readiness_gates(inventory, assessments)
         waves = plan_waves(assessments, inventory)
         write_assessment(inventory, assessments, waves, args.out, policy=policy.to_dict())
@@ -1007,6 +1012,7 @@ def main(argv: list[str] | None = None) -> int:
             args.out,
             metadata_path=args.metadata,
             dependencies_path=args.dependencies,
+            source=args.source,
             target=args.target,
             policy_path=args.policy,
             capacity_path=args.capacity,
@@ -2056,6 +2062,9 @@ def main(argv: list[str] | None = None) -> int:
             for check in result["checks"]:
                 print(f"[{check['status']}] {check['name']}: {check['detail']}")
         return 0 if result["status"] == "pass" else 1
+    if args.command == "providers":
+        print(json.dumps(provider_catalog(), indent=2))
+        return 0
     if args.command == "serve":
         if args.generate_only:
             manifest = prepare_console_site(args.site_dir, inventory_path=args.inventory)

@@ -6,9 +6,10 @@ from pathlib import Path
 from typing import Any
 
 from .models import Finding, WorkloadAssessment
+from .providers import DEFAULT_SOURCE_PROVIDER, resolve_provider_pair, target_to_assessment_id
 
 
-SUPPORTED_TARGETS = {"ahv", "nc2"}
+SUPPORTED_TARGETS = {"ahv", "nc2", "nutanix_ahv", "nutanix_nc2"}
 SUPPORTED_GUEST_FAMILIES = {
     "rhel",
     "red hat",
@@ -65,10 +66,10 @@ def assess_inventory(
     inventory: dict[str, Any],
     target: str = "ahv",
     policy: ReadinessPolicy = DEFAULT_POLICY,
+    source: str = DEFAULT_SOURCE_PROVIDER,
 ) -> list[WorkloadAssessment]:
-    normalized_target = target.lower()
-    if normalized_target not in SUPPORTED_TARGETS:
-        raise ValueError(f"Unsupported migration target: {target}")
+    pair = resolve_provider_pair(source, target)
+    normalized_target = target_to_assessment_id(pair.target.id)
 
     workloads = inventory.get("workloads")
     if not isinstance(workloads, list):

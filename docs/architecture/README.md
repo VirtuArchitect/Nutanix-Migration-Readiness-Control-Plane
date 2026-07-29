@@ -7,6 +7,12 @@ layer. It should not become a competing migration engine. Nutanix Move, Prism
 Central, Nutanix Cloud Manager, and partner runbooks remain the execution
 systems.
 
+NMRCP is the Nutanix Provider Edition of the broader **Migration Readiness
+Control Plane (MRCP)** architecture. The provider model keeps evidence,
+redaction, validation, and handoff workflows reusable while keeping
+source-target scoring rules specific to validated provider pairs. See
+[provider-model.md](provider-model.md).
+
 ## Initial Components
 
 - Inventory adapters: offline RVTools CSV import plus read-only vCenter and

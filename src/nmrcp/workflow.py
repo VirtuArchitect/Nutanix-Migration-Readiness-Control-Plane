@@ -40,6 +40,7 @@ def run_assessment_workflow(
     out_dir: Path,
     metadata_path: Path | None = None,
     dependencies_path: Path | None = None,
+    source: str = "vmware_vcenter",
     target: str = "ahv",
     policy_path: Path | None = None,
     capacity_path: Path | None = None,
@@ -92,7 +93,7 @@ def run_assessment_workflow(
         )
 
     policy = load_readiness_policy(policy_path)
-    assessments = assess_inventory(inventory, target=target, policy=policy)
+    assessments = assess_inventory(inventory, source=source, target=target, policy=policy)
     assessments = apply_dependency_readiness_gates(inventory, assessments)
     waves = plan_waves(assessments, inventory)
     write_assessment(inventory, assessments, waves, out_dir, policy=policy.to_dict())

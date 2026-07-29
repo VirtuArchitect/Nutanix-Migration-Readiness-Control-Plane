@@ -5,12 +5,15 @@ turn that evidence into a controlled migration plan.
 
 Current version: `0.2.0`
 
-NMRCP is a local-first operations console and evidence engine for
-VMware-to-Nutanix AHV or NC2 migration readiness. It helps migration teams
-connect approved environments, collect read-only source and target evidence,
-score workload readiness, identify blockers, plan migration waves, prepare
-Nutanix Move handoff artifacts, and package redacted proof for testers, change
-boards, and platform owners.
+NMRCP is the Nutanix Provider Edition of **Migration Readiness Control Plane
+(MRCP)**. MRCP is the parent architecture; this repo is the validated
+VMware-to-Nutanix implementation for AHV and NC2.
+
+It is a local-first operations console and evidence engine for migration
+readiness. It helps migration teams connect approved environments, collect
+read-only source and target evidence, score workload readiness, identify
+blockers, plan migration waves, prepare Nutanix Move handoff artifacts, and
+package redacted proof for testers, change boards, and platform owners.
 
 It is designed for operators: credentials stay local, customer inventory is
 treated as sensitive, read-only collection is the default, and write-intent
@@ -56,6 +59,8 @@ score, migration waves, and pre/post validation checklists.
 
 ## MVP Scope
 
+- Use a provider-aware source/target model while keeping VMware-to-Nutanix as
+  the only active validated provider family.
 - Connect to vCenter and Prism Central in read-only mode.
 - Inventory workloads, networks, storage posture, guest OS details, snapshots,
   tools/drivers, tags, ownership, and dependencies.
@@ -69,6 +74,7 @@ normalized inventory JSON file, scores migration readiness, creates waves, and
 exports redacted evidence artifacts. Connector modules are included as
 read-only stdlib HTTP building blocks so live discovery can be expanded without
 introducing runtime dependencies.
+The provider model is documented in `docs/architecture/provider-model.md`.
 
 ## Quick Start
 

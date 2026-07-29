@@ -26,6 +26,7 @@ from .models import Wave, WorkloadAssessment
 from .operator_portal import write_operator_portal
 from .operations_console import write_operations_console
 from .partner_handoff_matrix import partner_handoff_context, write_partner_handoff_matrix_csv
+from .providers import normalize_target_provider
 from .prism_categories import prism_category_context, write_prism_category_mapping_csv
 from .recovery_readiness import recovery_readiness_context, write_recovery_readiness_csv
 from .redaction import redact_dict
@@ -132,19 +133,31 @@ def write_assessment(
 
 def build_run_metadata(inventory: dict[str, Any], assessments: list[WorkloadAssessment], waves: list[Wave]) -> dict[str, Any]:
     source = inventory.get("source") if isinstance(inventory.get("source"), dict) else {}
+    target = assessments[0].target if assessments else "ahv"
     return {
         "schema_version": RUN_METADATA_SCHEMA_VERSION,
         "run_id": f"nmrcp-{uuid4()}",
         "generated_at": datetime.now(UTC).isoformat(),
         "product": "Nutanix Migration & Readiness Control Plane",
         "product_version": __version__,
+        "parent_product": "Migration Readiness Control Plane",
+        "edition": "Nutanix Provider Edition",
         "workflow": "local-first-readiness-assessment",
+        "source_provider": infer_source_provider(source),
+        "target_provider": normalize_target_provider(target),
         "source_system": str(redact_dict(source).get("system") or "unknown"),
         "workloads": len(assessments),
         "waves": len(waves),
         "secret_policy": "credentials_not_serialized",
         "mutation_policy": "read_only_collection_write_intent_gated",
     }
+
+
+def infer_source_provider(source: dict[str, Any]) -> str:
+    collector = str(source.get("collector") or source.get("system") or "").lower()
+    if "rvtools" in collector:
+        return "rvtools_import"
+    return "vmware_vcenter"
 
 
 def summarize(assessments: list[WorkloadAssessment]) -> dict[str, int]:

@@ -9,15 +9,20 @@ from typing import Any
 
 from . import __version__
 from .models import Wave, WorkloadAssessment
+from .providers import provider_catalog
 
 
 OPERATIONS_CONSOLE_SCHEMA_VERSION = "nmrcp_operations_console_v1"
 REQUIRED_TEXT = (
     "<!doctype html>",
     "<title>NMRCP Operations Console</title>",
-    "Nutanix Migration Readiness Operations Console",
-    "NMRCP",
     "Migration Readiness Control Plane",
+    "NMRCP",
+    "MRCP",
+    "Migration Readiness Control Plane",
+    "Nutanix Provider Edition",
+    "Provider Pair",
+    "VMware vCenter -> Nutanix AHV",
     "Independent migration readiness console",
     "Version",
     "Environment Gate",
@@ -84,12 +89,14 @@ def write_operations_console(
       --line: #d6dce4;
       --panel: #f6f8fa;
       --surface: #ffffff;
-      --rail: #111923;
-      --rail-2: #182330;
-      --rail-muted: #9aa8b7;
+      --rail: #101721;
+      --rail-2: #1a2532;
+      --rail-muted: #a8b4c2;
       --accent: #14728c;
       --accent-strong: #0f5d73;
       --mark: #20a5b8;
+      --gold: #b88718;
+      --violet: #5b5f97;
       --ready: #18704b;
       --research: #7a6417;
       --prepare: #9a4d1c;
@@ -102,7 +109,7 @@ def write_operations_console(
       font-size: 14px;
       line-height: 1.4;
       color: var(--ink);
-      background: #eef2f5;
+      background: #edf1f4;
     }}
     .shell {{
       min-height: 100vh;
@@ -117,6 +124,7 @@ def write_operations_console(
       align-content: start;
       gap: 16px;
       border-right: 1px solid #0b1118;
+      box-shadow: 8px 0 24px rgba(17, 25, 35, .08);
     }}
     nav h1 {{
       font-size: 15px;
@@ -172,6 +180,18 @@ def write_operations_console(
       line-height: 1.25;
       margin-top: 3px;
     }}
+    .edition-tag {{
+      display: inline-block;
+      margin-top: 7px;
+      border: 1px solid rgba(32,165,184,.38);
+      border-radius: 999px;
+      padding: 3px 7px;
+      color: white;
+      background: rgba(32,165,184,.16);
+      font-size: 10.5px;
+      font-weight: 800;
+      line-height: 1;
+    }}
     .rail-section {{
       display: grid;
       gap: 4px;
@@ -184,6 +204,12 @@ def write_operations_console(
       color: var(--rail-muted);
       font-size: 12px;
       line-height: 1.35;
+    }}
+    .rail-status strong {{
+      display: block;
+      color: white;
+      margin-bottom: 3px;
+      font-size: 12px;
     }}
     main {{
       min-width: 0;
@@ -224,6 +250,47 @@ def write_operations_console(
       background: var(--surface);
       padding: 10px 12px;
     }}
+    .provider-band {{
+      display: grid;
+      grid-template-columns: minmax(190px, 1fr) auto minmax(190px, 1fr);
+      gap: 10px;
+      align-items: stretch;
+    }}
+    .provider-node, .provider-arrow {{
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 12px 14px;
+      min-height: 78px;
+    }}
+    .provider-node span {{
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }}
+    .provider-node strong {{
+      display: block;
+      margin-top: 4px;
+      font-size: 16px;
+      line-height: 1.2;
+    }}
+    .provider-node small {{
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.25;
+    }}
+    .provider-arrow {{
+      display: grid;
+      place-items: center;
+      min-width: 54px;
+      color: var(--accent-strong);
+      font-weight: 900;
+      font-size: 20px;
+    }}
     .ops-ribbon span {{
       display: block;
       color: var(--muted);
@@ -245,6 +312,7 @@ def write_operations_console(
       border: 1px solid var(--line);
       border-radius: 7px;
       background: white;
+      box-shadow: 0 1px 2px rgba(20, 32, 44, .04);
     }}
     .metric {{ padding: 10px 12px; }}
     .metric strong {{ display: block; font-size: 22px; line-height: 1.1; }}
@@ -263,6 +331,7 @@ def write_operations_console(
     }}
     .connection h3 {{
       margin-bottom: 0;
+      font-size: 14px;
     }}
     .connection .meta {{
       border-top: 1px solid var(--line);
@@ -417,6 +486,8 @@ def write_operations_console(
       .shell, .workbench {{ display: block; }}
       .content {{ padding: 18px; }}
       .filters {{ grid-template-columns: 1fr; }}
+      .provider-band {{ grid-template-columns: 1fr; }}
+      .provider-arrow {{ min-height: 38px; }}
     }}
   </style>
 </head>
@@ -427,7 +498,8 @@ def write_operations_console(
         <div class="brand-mark" aria-hidden="true"><span></span></div>
         <div>
           <h1>NMRCP</h1>
-          <small>Migration Readiness Control Plane</small>
+          <small>MRCP - Nutanix Provider Edition</small>
+          <span class="edition-tag">Nutanix Provider Edition</span>
         </div>
       </div>
       <div class="rail-section">
@@ -436,24 +508,29 @@ def write_operations_console(
         <a href="#plan">Build Move Plan</a>
         <a href="#workbench">Operator Workbench</a>
       </div>
-      <div class="rail-status">Version {escape(payload["product_version"])}. Independent migration readiness console. Environment connections are local-only and require explicit operator approval.</div>
+      <div class="rail-status"><strong>Provider Pair</strong>{escape(payload["provider_pair"]["source_label"])} -> {escape(payload["provider_pair"]["target_label"])}<br>Version {escape(payload["product_version"])}. Environment connections are local-only and require explicit operator approval.</div>
     </nav>
     <main>
       <header>
         <div>
           <div class="eyebrow">Independent migration readiness console</div>
-          <h2>Nutanix Migration Readiness Operations Console</h2>
-          <p class="muted">Move-style guided assessment console for source discovery, compatibility analysis, wave planning, and evidence review.</p>
+          <h2>Migration Readiness Control Plane</h2>
+          <p class="muted">Nutanix Provider Edition for source discovery, compatibility analysis, wave planning, and evidence review.</p>
         </div>
         <button type="button" class="secondary" id="copy-command">Copy Run Command</button>
       </header>
       <section class="content">
         <section class="ops-ribbon" aria-label="Operations context">
-          <div><span>Identity</span><strong>NMRCP Console</strong></div>
+          <div><span>Identity</span><strong>MRCP Console</strong></div>
+          <div><span>Edition</span><strong>Nutanix Provider Edition</strong></div>
           <div><span>Version</span><strong>{escape(payload["product_version"])}</strong></div>
           <div><span>Mode</span><strong>Local-first evidence workflow</strong></div>
           <div><span>Boundary</span><strong>Write intent is gated, not executed</strong></div>
-          <div><span>Audience</span><strong>Platform and migration operations</strong></div>
+        </section>
+        <section class="provider-band" aria-label="Provider Pair">
+          <div class="provider-node"><span>Source Provider</span><strong>{escape(payload["provider_pair"]["source_label"])}</strong><small>{escape(payload["provider_pair"]["source_status"])} collector</small></div>
+          <div class="provider-arrow" aria-hidden="true">-></div>
+          <div class="provider-node"><span>Target Provider</span><strong>{escape(payload["provider_pair"]["target_label"])}</strong><small>{escape(payload["provider_pair"]["rule_set_label"])}</small></div>
         </section>
         <section class="status-strip" aria-label="Readiness summary">
           {metric("Workloads", payload["summary"]["total"])}
@@ -719,6 +796,16 @@ def console_payload(inventory: dict[str, Any], assessments: list[WorkloadAssessm
     return {
         "schema_version": OPERATIONS_CONSOLE_SCHEMA_VERSION,
         "product_version": __version__,
+        "provider_catalog": provider_catalog(),
+        "provider_pair": {
+            "source": "vmware_vcenter",
+            "source_label": "VMware vCenter",
+            "source_status": "validated",
+            "target": "nutanix_ahv",
+            "target_label": "Nutanix AHV",
+            "rule_set": "vmware_to_nutanix_ahv",
+            "rule_set_label": "VMware vCenter -> Nutanix AHV",
+        },
         "summary": summarize(assessments),
         "connections": [
             {"id": "vcenter", "label": "vCenter", "mode": "read-only", "status": "not_configured"},
