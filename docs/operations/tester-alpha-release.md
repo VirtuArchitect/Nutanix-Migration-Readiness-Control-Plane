@@ -1,6 +1,6 @@
 # Tester Alpha Release
 
-NMRCP `0.2.0` is the first tester-alpha release shape. The goal is to let an
+NMRCP `0.3.0-alpha.1` is the provider-aware tester-alpha release shape. The goal is to let an
 approved tester say:
 
 ```text
@@ -45,9 +45,9 @@ browser-only preview without the local API server.
 2. Regenerate `docs/demo/operations-console.html`.
 3. Run compile, unit tests, security scan, Docker smoke, and local smoke.
 4. Confirm the direct demo URL serves the expected console version.
-5. Create a Git tag such as `v0.2.0`.
+5. Create a Git pre-release tag such as `v0.3.0-alpha.1`.
 6. Let the Docker publish workflow push:
-   `ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.2.0`.
+   `ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.3.0-alpha.1`.
 7. Create a GitHub release with tester scope, known limits, security boundaries,
    and the direct console demo link.
 

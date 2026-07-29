@@ -9,7 +9,7 @@ on:
       image_tag:
         description: "Image tag to publish"
         required: true
-        default: "0.2.0-alpha"
+        default: "0.3.0-alpha.1"
 
 permissions:
   contents: read
@@ -28,7 +28,11 @@ jobs:
           image="ghcr.io/${GITHUB_REPOSITORY_OWNER}/nutanix-migration-readiness-control-plane"
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             tag="${GITHUB_REF_NAME#v}"
-            extra_tag="latest"
+            if [[ "${tag}" == *-* ]]; then
+              extra_tag="alpha"
+            else
+              extra_tag="latest"
+            fi
           else
             tag="${{ inputs.image_tag }}"
             extra_tag="alpha"

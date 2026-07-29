@@ -3,7 +3,7 @@
 Know exactly what will break before you migrate from VMware to Nutanix, then
 turn that evidence into a controlled migration plan.
 
-Current version: `0.2.0`
+Current version: `0.3.0-alpha.1`
 
 NMRCP is the Nutanix Provider Edition of **Migration Readiness Control Plane
 (MRCP)**. MRCP is the parent architecture; this repo is the validated

@@ -48,7 +48,7 @@ Published alpha images are produced by the GitHub `Publish Docker image`
 workflow:
 
 ```text
-ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.2.0
+ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.3.0-alpha.1
 ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:alpha
 ```
 
@@ -57,7 +57,7 @@ Run a published image directly:
 ```powershell
 docker run --rm -p 8080:8080 `
   -v ${PWD}\data:/data `
-  ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.2.0
+  ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.3.0-alpha.1
 ```
 
 The image does not contact vCenter, Prism Central, Nutanix Move, AHV, or NC2 by
