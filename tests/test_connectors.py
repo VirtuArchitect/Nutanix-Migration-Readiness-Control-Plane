@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from nmrcp.connectors import EndpointConfig, PrismCentralClient, ReadOnlyHttpClient, VCenterClient, endpoint_tls_mode
+from nmrcp.connectors import EndpointConfig, PrismCentralClient, ReadOnlyHttpClient, VCenterClient, connector_capability_catalog, endpoint_tls_mode
 
 
 class ConnectorSafetyTests(unittest.TestCase):
@@ -25,6 +25,18 @@ class ConnectorSafetyTests(unittest.TestCase):
             "disabled",
         )
         self.assertEqual(endpoint_tls_mode(EndpointConfig("http://127.0.0.1:8080", "user", "pass")), "loopback_http")
+
+    def test_connector_capability_catalog_declares_no_write_execution(self):
+        catalog = connector_capability_catalog()
+        connectors = {item["id"]: item for item in catalog["connectors"]}
+
+        self.assertEqual(catalog["schema_version"], "nmrcp_connector_capabilities_v1")
+        self.assertIn("/api/vcenter/vm", connectors["vcenter"]["read_only_paths"])
+        self.assertIn("/api/nutanix/v3/vms/list", connectors["prism-central"]["read_only_paths"])
+        self.assertFalse(connectors["vcenter"]["write_enabled"])
+        self.assertFalse(connectors["prism-central"]["write_enabled"])
+        self.assertEqual(connectors["nutanix-move"]["status"], "proof_required")
+        self.assertEqual(catalog["mutation_policy"]["write_intent"], "environment_gate_only")
 
     def test_post_is_limited_to_read_only_session_and_list_paths(self):
         client = ReadOnlyHttpClient(EndpointConfig("https://example.test", "user", "pass"))

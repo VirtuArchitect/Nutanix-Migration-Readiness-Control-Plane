@@ -19,6 +19,76 @@ READ_ONLY_POST_PATHS = {
 
 
 @dataclass(frozen=True)
+class ConnectorCapability:
+    id: str
+    label: str
+    modes: tuple[str, ...]
+    read_only_paths: tuple[str, ...]
+    write_enabled: bool
+    credential_policy: str
+    status: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "label": self.label,
+            "modes": list(self.modes),
+            "read_only_paths": list(self.read_only_paths),
+            "write_enabled": self.write_enabled,
+            "credential_policy": self.credential_policy,
+            "status": self.status,
+        }
+
+
+CONNECTOR_CAPABILITIES: dict[str, ConnectorCapability] = {
+    "vcenter": ConnectorCapability(
+        id="vcenter",
+        label="VMware vCenter",
+        modes=("read",),
+        read_only_paths=(
+            "/api/session",
+            "/api/vcenter/vm",
+            "/api/vcenter/vm/{vm}",
+            "/api/vcenter/network",
+        ),
+        write_enabled=False,
+        credential_policy="request_only_not_persisted",
+        status="alpha_read_only",
+    ),
+    "prism-central": ConnectorCapability(
+        id="prism-central",
+        label="Prism Central",
+        modes=("read",),
+        read_only_paths=(
+            "/api/nutanix/v3/clusters/list",
+            "/api/nutanix/v3/vms/list",
+        ),
+        write_enabled=False,
+        credential_policy="request_only_not_persisted",
+        status="alpha_read_only",
+    ),
+    "nutanix-move": ConnectorCapability(
+        id="nutanix-move",
+        label="Nutanix Move",
+        modes=("proof", "write_intent"),
+        read_only_paths=(),
+        write_enabled=False,
+        credential_policy="not_implemented_no_credentials_accepted",
+        status="proof_required",
+    ),
+    "esxi": ConnectorCapability(
+        id="esxi",
+        label="VMware ESXi",
+        modes=("gate",),
+        read_only_paths=(),
+        write_enabled=False,
+        credential_policy="not_implemented_no_credentials_accepted",
+        status="gate_only",
+    ),
+}
+
+
+@dataclass(frozen=True)
 class EndpointConfig:
     base_url: str
     username: str
@@ -109,6 +179,18 @@ def endpoint_tls_mode(config: EndpointConfig | None) -> str:
     if parsed.scheme == "http" and is_loopback_host(parsed.hostname or ""):
         return "loopback_http"
     return "enabled" if config.verify_tls else "disabled"
+
+
+def connector_capability_catalog() -> dict[str, Any]:
+    return {
+        "schema_version": "nmrcp_connector_capabilities_v1",
+        "connectors": [capability.to_dict() for capability in CONNECTOR_CAPABILITIES.values()],
+        "mutation_policy": {
+            "default": "disabled",
+            "write_intent": "environment_gate_only",
+            "production": "fail_closed_without_all_gates_and_external_change_control",
+        },
+    }
 
 
 class VCenterClient:

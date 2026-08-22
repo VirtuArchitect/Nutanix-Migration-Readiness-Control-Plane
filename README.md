@@ -50,6 +50,10 @@ validate read/write-intent gates for PC, Move, vCenter, ESXi, AHV, NC2, and
 environment-specific workflows. See `docs/operations/docker.md`,
 `docs/operations/tester-quickstart.md`, and
 `docs/operations/tester-alpha-release.md`.
+Runtime console state is written under the Compose-mounted `data` directory and
+is ignored by Git. It records redacted environment profile status, run history,
+connector capability metadata, and evidence paths; credentials, usernames,
+endpoint values, tokens, and raw inventory are not persisted in console state.
 
 This project is a local-first readiness and evidence layer for teams planning
 VMware-to-Nutanix AHV or NC2 migrations. It does not replace Nutanix Move,
@@ -1334,5 +1338,7 @@ it with
 
 The control plane should become the assessment and evidence system around
 Nutanix Move, Prism Central, NCM, and partner migration workflows. The next
-major slices are real lab testing against a non-production Move appliance,
-CMDB/dependency source adapters, and a small operator UI.
+major slices are real lab testing against approved vCenter, Prism Central, and a
+non-production Move appliance; a stateful operator console with environment
+profiles and run history; hardened connector capability contracts; encrypted or
+external credential storage; and appliance-grade deployment controls.

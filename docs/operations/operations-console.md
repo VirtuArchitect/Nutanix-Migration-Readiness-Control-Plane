@@ -30,11 +30,17 @@ When served with `nmrcp serve`, the console also exposes a tester workflow:
 - **Prepare Tester Report** posts to `/api/tester-report`, summarizes the local
   redacted connection, collection, and readiness artifacts, and writes
   `tester-report.md` plus `tester-report.json` for GitHub tester feedback.
+- **Refresh Local State** reads `/api/state` and shows the local profile, run,
+  and evidence counters from `console-state.json`.
 
-The console does not persist credentials. Live vCenter/Prism proof and approved
-Nutanix Move lab evidence remain explicit gates. Write mode is gate evaluation
-only; Nutanix Move, Prism Central, vCenter, or ESXi mutation is not enabled by
-this tester workflow.
+The served console writes `console-state.json` in the configured data directory
+so operators can restart the console and still see redacted environment profile
+metadata, run history, connector capability metadata, and evidence paths. It
+does not persist credentials, usernames, endpoint values, tokens, or raw
+inventory in that state file. Live vCenter/Prism proof and approved Nutanix Move
+lab evidence remain explicit gates. Write mode is gate evaluation only; Nutanix
+Move, Prism Central, vCenter, or ESXi mutation is not enabled by this tester
+workflow.
 
 Validate the generated console against `assessment.json`:
 

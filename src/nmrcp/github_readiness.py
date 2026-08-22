@@ -37,6 +37,7 @@ PUBLICATION_DISCOVERY_DIRS: tuple[str, ...] = (
 
 PUBLICATION_DISCOVERY_EXCLUDED_PARTS: tuple[str, ...] = (
     "__pycache__",
+    "data",
 )
 
 PUBLICATION_DISCOVERY_EXCLUDED_SUFFIXES: tuple[str, ...] = (
@@ -86,6 +87,7 @@ REQUIRED_PUBLICATION_PATHS: tuple[str, ...] = (
     "scripts/smoke.ps1",
     "src/nmrcp/cli.py",
     "src/nmrcp/change_gate.py",
+    "src/nmrcp/console_state.py",
     "src/nmrcp/evidence.py",
     "src/nmrcp/github_readiness.py",
     "src/nmrcp/providers.py",
@@ -116,6 +118,8 @@ REQUIRED_PUBLICATION_PATHS: tuple[str, ...] = (
     "tests/test_pull_request_readiness.py",
     "tests/test_external_proof_plan.py",
     "tests/test_environment_access.py",
+    "tests/test_server.py",
+    "tests/test_connectors.py",
     "tests/test_waves_and_evidence.py",
     "tests/test_move_staging_readiness.py",
     "tests/test_what_will_break.py",
@@ -126,6 +130,7 @@ REQUIRED_PUBLICATION_PATHS: tuple[str, ...] = (
 
 FORBIDDEN_TRACKED_PREFIXES: tuple[str, ...] = (
     "outputs/",
+    "data/",
     "build/",
     "dist/",
 )

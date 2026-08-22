@@ -22,6 +22,7 @@ class GitHubReadinessTests(unittest.TestCase):
             "docs/architecture/provider-model.md",
             ".github/workflows/docker-publish.yml",
             "src/nmrcp/github_readiness.py",
+            "src/nmrcp/console_state.py",
             "src/nmrcp/providers.py",
             "src/nmrcp/environment_access.py",
             "src/nmrcp/vault_readiness.py",
@@ -36,6 +37,8 @@ class GitHubReadinessTests(unittest.TestCase):
             "tests/test_vault_readiness.py",
             "tests/test_product_readiness.py",
             "tests/test_environment_access.py",
+            "tests/test_server.py",
+            "tests/test_connectors.py",
         ):
             self.assertIn(expected, REQUIRED_PUBLICATION_PATHS)
 
@@ -52,6 +55,8 @@ class GitHubReadinessTests(unittest.TestCase):
         self.assertIn("PENTEST_SCOPE_TEMPLATE.md", paths)
         self.assertNotIn("src/nmrcp/__pycache__/cli.cpython-314.pyc", paths)
         self.assertFalse(any(path.startswith("outputs/") for path in paths))
+        self.assertFalse(any(path.startswith("data/") for path in paths))
+        self.assertFalse(any("/data/" in path for path in paths))
 
     def test_github_readiness_passes_when_required_paths_are_tracked(self):
         with tempfile.TemporaryDirectory() as tmp:

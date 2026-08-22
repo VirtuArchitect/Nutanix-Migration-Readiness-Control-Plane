@@ -405,6 +405,29 @@
       font-family: Consolas, "Liberation Mono", monospace;
       line-height: 1.35;
     }
+    .state-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .state-summary div {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 9px;
+      background: #fff;
+    }
+    .state-summary span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    .state-summary strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 14px;
+    }
     @media (max-width: 960px) {
       .shell, .workbench { display: block; }
       .content { padding: 18px; }
@@ -542,8 +565,14 @@
               <button type="button" id="collect-sources" class="secondary">Collect Source Evidence</button>
               <button type="button" id="run-readiness" class="secondary">Run Readiness Assessment</button>
               <button type="button" id="tester-report" class="secondary">Prepare Tester Report</button>
+              <button type="button" id="refresh-state" class="secondary">Refresh Local State</button>
             </div>
-            <p class="hint">These buttons call /api/environment-access, /api/connection-test, /api/collect-sources, /api/run-readiness, and /api/tester-report on this local console server. Passwords are sent only to the local process for the active request and are not written to proof files. Write intent validates gates only; this workflow does not execute mutating actions.</p>
+            <p class="hint">These buttons call /api/environment-access, /api/connection-test, /api/collect-sources, /api/run-readiness, /api/tester-report, and /api/state on this local console server. Passwords are sent only to the local process for the active request and are not written to proof files. Write intent validates gates only; this workflow does not execute mutating actions.</p>
+            <div class="state-summary" aria-label="Local state summary">
+              <div><span>Profiles</span><strong id="state-profiles">0</strong></div>
+              <div><span>Runs</span><strong id="state-runs">0</strong></div>
+              <div><span>Evidence</span><strong id="state-evidence">0</strong></div>
+            </div>
             <div class="proof" id="api-proof" role="status" aria-live="polite">Ready for tester input. API actions require the local nmrcp serve console. Use secure endpoints unless you are testing against a loopback simulator.</div>
           </div>
         </section>
@@ -658,6 +687,29 @@
       setProof(scrub(payload));
       return payload;
     }
+    async function getJson(path) {
+      setProof(`Loading ${path}...`);
+      const response = await fetch(path, {method: "GET", headers: {"Accept": "application/json"}});
+      const text = await response.text();
+      let payload;
+      try { payload = JSON.parse(text); }
+      catch (error) {
+        throw new Error("Local console API is unavailable. Run nmrcp serve or Docker Compose, then open the local console URL.");
+      }
+      if (!response.ok || payload.status === "fail") {
+        throw new Error(scrub(payload));
+      }
+      setProof(scrub(payload));
+      return payload;
+    }
+    function updateStateSummary(state) {
+      const profiles = state.environment_profiles || {};
+      const runs = state.run_history || [];
+      const evidence = state.evidence_index || [];
+      document.getElementById("state-profiles").textContent = Object.keys(profiles).length;
+      document.getElementById("state-runs").textContent = runs.length;
+      document.getElementById("state-evidence").textContent = evidence.length;
+    }
     async function runAction(button, action) {
       button.disabled = true;
       try { await action(); }
@@ -675,21 +727,29 @@
         const status = document.querySelector(`[data-connection="${check.name === "prism-central" ? "prism" : check.name}"] [data-status]`);
         if (status) status.textContent = check.status;
       }
+      updateStateSummary(await getJson("/api/state"));
     }));
     document.getElementById("environment-access").addEventListener("click", (event) => runAction(event.currentTarget, async () => {
       await postJson("/api/environment-access", environmentAccessPayload());
+      updateStateSummary(await getJson("/api/state"));
     }));
     document.getElementById("collect-sources").addEventListener("click", (event) => runAction(event.currentTarget, async () => {
       await postJson("/api/collect-sources", {
         vcenter: endpointPayload("vcenter"),
         prism: endpointPayload("prism")
       });
+      updateStateSummary(await getJson("/api/state"));
     }));
     document.getElementById("run-readiness").addEventListener("click", (event) => runAction(event.currentTarget, async () => {
       await postJson("/api/run-readiness", {use_collected: true});
+      updateStateSummary(await getJson("/api/state"));
     }));
     document.getElementById("tester-report").addEventListener("click", (event) => runAction(event.currentTarget, async () => {
       await postJson("/api/tester-report", {});
+      updateStateSummary(await getJson("/api/state"));
+    }));
+    document.getElementById("refresh-state").addEventListener("click", (event) => runAction(event.currentTarget, async () => {
+      updateStateSummary(await getJson("/api/state"));
     }));
     document.getElementById("copy-command").addEventListener("click", async () => {
       const command = document.getElementById("run-command").value;

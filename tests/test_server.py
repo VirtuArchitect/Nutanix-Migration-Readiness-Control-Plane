@@ -9,7 +9,8 @@ from http.server import ThreadingHTTPServer
 from urllib.request import Request
 
 from nmrcp import __version__
-from nmrcp.server import ConsoleRequestHandler, api_environment_access, api_run_readiness, api_tester_report, safe_inventory_path
+from nmrcp.console_state import CONSOLE_STATE_FILE
+from nmrcp.server import ConsoleRequestHandler, api_environment_access, api_run_readiness, api_state, api_tester_report, safe_inventory_path
 
 from nmrcp.cli import main
 from nmrcp.server import prepare_console_site
@@ -29,6 +30,8 @@ class ConsoleServerTests(unittest.TestCase):
             payload = json.loads((site_dir / "site-manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(payload["schema_version"], "nmrcp_console_server_v1")
             self.assertEqual(payload["entrypoint"], "operations-console.html")
+            self.assertIn("/api/state", payload["api_endpoints"])
+            self.assertTrue((site_dir / "data" / CONSOLE_STATE_FILE).exists())
 
     def test_cli_serve_generate_only(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -145,6 +148,37 @@ class ConsoleServerTests(unittest.TestCase):
             self.assertTrue((data_dir / "tester-report.md").exists())
             self.assertTrue((data_dir / "tester-report.json").exists())
             self.assertEqual(payload["summary"]["workloads"], 3)
+
+    def test_console_state_tracks_run_history_without_credentials(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            data_dir = Path(tmp) / "data"
+            payload = api_environment_access(
+                {
+                    "environment": "uat",
+                    "target": "pc",
+                    "mode": "read",
+                    "gates": {"source_scope_approved": True, "credential_source_approved": True, "change_reference": True},
+                    "vcenter": {
+                        "endpoint": "https://vcenter.example.test",
+                        "username": "administrator",
+                        "credential": "super-secret",
+                        "verify_tls": True,
+                    },
+                },
+                data_dir,
+            )
+            state = api_state(data_dir)
+
+            serialized = json.dumps(state)
+            self.assertEqual(payload["status"], "pass")
+            self.assertEqual(state["schema_version"], "nmrcp_console_state_v1")
+            self.assertEqual(len(state["run_history"]), 1)
+            self.assertIn("uat:pc", state["environment_profiles"])
+            self.assertIn("vcenter", state["environment_profiles"])
+            self.assertFalse(state["credential_policy"]["credentials_persisted"])
+            self.assertNotIn("super-secret", serialized)
+            self.assertNotIn("administrator", serialized)
+            self.assertNotIn("vcenter.example.test", serialized)
 
     def test_environment_access_api_blocks_missing_production_write_gates(self):
         payload = api_environment_access(

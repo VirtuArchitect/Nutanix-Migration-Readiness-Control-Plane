@@ -8,6 +8,7 @@ from typing import Any
 
 from . import __version__
 from .collection_workflow import collect_sources
+from .console_state import ensure_console_state, load_console_state, record_console_event
 from .connectors import EndpointConfig
 from .environment_access import environment_access_options, evaluate_environment_access
 from .evidence import write_assessment
@@ -49,10 +50,16 @@ def prepare_console_site(
             "/api/connection-test",
             "/api/collect-sources",
             "/api/run-readiness",
-            "/api/tester-report",
-            "/api/environment-access",
+        "/api/tester-report",
+        "/api/environment-access",
+        "/api/state",
         ],
         "environment_access": environment_access_options(),
+    }
+    payload["state"] = {
+        "schema_version": "nmrcp_console_state_pointer_v1",
+        "path": str(ensure_console_state(data_dir)),
+        "credentials_persisted": False,
     }
     (site_dir / "site-manifest.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return payload
@@ -93,6 +100,9 @@ class ConsoleRequestHandler(SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(body)
             return
+        if self.path == "/api/state":
+            self.send_json(api_state(self.data_dir()))
+            return
         super().do_GET()
 
     def do_POST(self) -> None:  # noqa: N802 - stdlib hook name.
@@ -111,7 +121,7 @@ class ConsoleRequestHandler(SimpleHTTPRequestHandler):
                 self.send_json(api_tester_report(self.data_dir()))
                 return
             if self.path == "/api/environment-access":
-                self.send_json(api_environment_access(payload))
+                self.send_json(api_environment_access(payload, self.data_dir()))
                 return
             self.send_json({"status": "fail", "errors": ["Unknown API endpoint"]}, status=404)
         except ValueError as exc:
@@ -160,12 +170,14 @@ def api_connection_test(payload: dict[str, Any], data_dir: Path) -> dict[str, An
     data_dir.mkdir(parents=True, exist_ok=True)
     proof_path = data_dir / "live-readiness.json"
     proof_path.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-    return {
+    response = {
         "schema_version": "nmrcp_console_connection_test_v1",
         "status": result["status"],
         "proof": str(proof_path),
         "result": result,
     }
+    record_console_event(data_dir, "connection-test", str(response["status"]), request=payload, response=response)
+    return response
 
 
 def api_collect_sources(payload: dict[str, Any], data_dir: Path) -> dict[str, Any]:
@@ -180,12 +192,14 @@ def api_collect_sources(payload: dict[str, Any], data_dir: Path) -> dict[str, An
         prism_page_size=int(payload.get("prism_page_size") or 500),
         prism_max_pages=int(payload.get("prism_max_pages") or 20),
     )
-    return {
+    response = {
         "schema_version": "nmrcp_console_collection_v1",
         "status": summary["status"],
         "source_dir": str(source_dir),
         "summary": summary,
     }
+    record_console_event(data_dir, "collect-sources", str(response["status"]), request=payload, response=response)
+    return response
 
 
 def api_run_readiness(payload: dict[str, Any], data_dir: Path, site_dir: Path) -> dict[str, Any]:
@@ -200,7 +214,7 @@ def api_run_readiness(payload: dict[str, Any], data_dir: Path, site_dir: Path) -
     assessment_dir = data_dir / "assessment"
     write_assessment(inventory, assessments, waves, assessment_dir)
     write_operations_console(inventory, assessments, waves, site_dir / "operations-console.html")
-    return {
+    response = {
         "schema_version": "nmrcp_console_readiness_run_v1",
         "status": "pass",
         "product_version": __version__,
@@ -216,13 +230,15 @@ def api_run_readiness(payload: dict[str, Any], data_dir: Path, site_dir: Path) -
             "blocked": sum(1 for item in assessments if item.readiness == "blocked"),
         },
     }
+    record_console_event(data_dir, "run-readiness", str(response["status"]), request=payload, response=response)
+    return response
 
 
 def api_tester_report(data_dir: Path) -> dict[str, Any]:
     report_path = data_dir / "tester-report.md"
     json_path = data_dir / "tester-report.json"
     report = write_tester_report(data_dir, report_path, json_path)
-    return {
+    response = {
         "schema_version": "nmrcp_console_tester_report_v1",
         "status": report["status"],
         "report": str(report_path),
@@ -230,16 +246,24 @@ def api_tester_report(data_dir: Path) -> dict[str, Any]:
         "summary": report["summary"],
         "missing_artifacts": report["missing_artifacts"],
     }
+    record_console_event(data_dir, "tester-report", str(response["status"]), request={}, response=response)
+    return response
 
 
-def api_environment_access(payload: dict[str, Any]) -> dict[str, Any]:
+def api_environment_access(payload: dict[str, Any], data_dir: Path = Path("outputs/console-data")) -> dict[str, Any]:
     result = evaluate_environment_access(
         str(payload.get("environment") or "dev"),
         str(payload.get("target") or "pc"),
         str(payload.get("mode") or "read"),
         payload.get("gates") if isinstance(payload.get("gates"), dict) else {},
     )
-    return result.to_dict()
+    response = result.to_dict()
+    record_console_event(data_dir, "environment-access", response["status"], request=payload, response=response)
+    return response
+
+
+def api_state(data_dir: Path) -> dict[str, Any]:
+    return load_console_state(data_dir)
 
 
 def endpoint_config_from_payload(value: Any) -> EndpointConfig | None:

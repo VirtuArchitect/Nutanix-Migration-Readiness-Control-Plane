@@ -18,6 +18,8 @@ blockers matched my lab.
 - Validate Dev, UAT, and Production gates before read or write-intent workflows.
 - Prepare redacted tester feedback artifacts for GitHub issues.
 - Package versioned assessment evidence with a run ID and NMRCP version.
+- Keep a restart-safe local console state file for redacted environment profile
+  status, run history, connector capability metadata, and evidence paths.
 
 ## Runtime Options
 
@@ -34,7 +36,10 @@ The local served console and Docker console can initiate approved connectivity
 tests and read-only collection against vCenter and Prism Central. Nutanix Move,
 AHV, NC2, and ESXi workflows are represented through explicit environment
 gates, dry-run or proof capture, and evidence handoff boundaries until a
-connector-specific implementation is present and reviewed.
+connector-specific implementation is present and reviewed. The local state file
+does not make the product production-ready by itself; real endpoint proof,
+approved Move appliance proof, encrypted credential storage, and role-aware
+operator access remain the next production-hardening gates.
 
 The static GitHub Pages demo cannot connect to infrastructure because it is a
 browser-only preview without the local API server.
