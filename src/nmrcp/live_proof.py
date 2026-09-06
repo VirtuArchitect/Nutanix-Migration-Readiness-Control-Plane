@@ -16,7 +16,14 @@ LIVE_READINESS_SCHEMA_VERSION = "nmrcp_live_readiness_v1"
 ALLOWED_VCENTER_READ_ONLY_CALLS = {"/api/session", "/api/vcenter/vm"}
 ALLOWED_VCENTER_COLLECTION_CALLS = ALLOWED_VCENTER_READ_ONLY_CALLS | {"/api/vcenter/vm/{vm}", "/api/vcenter/network"}
 ALLOWED_PRISM_READ_ONLY_CALLS = {"/api/nutanix/v3/clusters/list", "/api/nutanix/v3/vms/list"}
-ALLOWED_COLLECTION_CALLS = ALLOWED_VCENTER_COLLECTION_CALLS | ALLOWED_PRISM_READ_ONLY_CALLS
+ALLOWED_PRISM_ELEMENT_READ_ONLY_CALLS = {
+    "/PrismGateway/services/rest/v2.0/cluster",
+    "/PrismGateway/services/rest/v2.0/hosts",
+    "/PrismGateway/services/rest/v2.0/storage_containers",
+    "/PrismGateway/services/rest/v2.0/networks",
+    "/PrismGateway/services/rest/v2.0/vms",
+}
+ALLOWED_COLLECTION_CALLS = ALLOWED_VCENTER_COLLECTION_CALLS | ALLOWED_PRISM_READ_ONLY_CALLS | ALLOWED_PRISM_ELEMENT_READ_ONLY_CALLS
 ALLOWED_TLS_VERIFICATION_STATES = {"enabled", "disabled", "loopback_http", "not_configured"}
 ASSESSMENT_INTAKE_VALIDATION_SCHEMA_VERSION = "nmrcp_assessment_intake_validation_v1"
 
@@ -49,6 +56,7 @@ def validate_live_proof(
     live_readiness_path: Path,
     collection_summary_path: Path | None = None,
     source_dir: Path | None = None,
+    nutanix_only: bool = False,
 ) -> LiveProofValidation:
     checks: list[dict[str, Any]] = []
     errors: list[str] = []
@@ -56,7 +64,7 @@ def validate_live_proof(
 
     live_readiness = read_json(live_readiness_path, errors)
     if live_readiness:
-        validate_live_readiness_payload(live_readiness_path, live_readiness, checks, errors, warnings)
+        validate_live_readiness_payload(live_readiness_path, live_readiness, checks, errors, warnings, nutanix_only=nutanix_only)
 
     if collection_summary_path:
         collection_summary = read_json(collection_summary_path, errors)
@@ -79,6 +87,8 @@ def validate_live_readiness_payload(
     checks: list[dict[str, Any]],
     errors: list[str],
     warnings: list[str],
+    *,
+    nutanix_only: bool = False,
 ) -> None:
     findings = scan_text(path.name, path.read_text(encoding="utf-8"))
     add_check(checks, "live-readiness-redaction", not findings, f"findings={len(findings)}")
@@ -108,7 +118,7 @@ def validate_live_readiness_payload(
     tls_ok = validate_tls_state_map(
         "live-readiness-security",
         tls_states,
-        ("vcenter", "prism-central"),
+        ("prism-central", "prism-element") if nutanix_only else ("vcenter", "prism-central"),
         checks,
         errors,
         warnings,
@@ -116,7 +126,8 @@ def validate_live_readiness_payload(
     add_check(checks, "live-readiness-tls-verification", tls_ok, tls_state_detail(tls_states))
 
     live_checks = payload.get("checks") if isinstance(payload.get("checks"), list) else []
-    for name in ("vcenter", "prism-central"):
+    required_checks = ("prism-central", "prism-element") if nutanix_only else ("vcenter", "prism-central")
+    for name in required_checks:
         check = next((item for item in live_checks if isinstance(item, dict) and item.get("name") == name), None)
         if not isinstance(check, dict):
             add_check(checks, f"{name}-live-readiness", False, "missing")
@@ -146,7 +157,7 @@ def validate_endpoint_check(
     add_check(checks, f"{name}-tls-verification", tls_ok, str(check.get("tls_verification") or "missing"))
 
     read_only_calls = set(str(call) for call in check.get("read_only_calls") or [])
-    allowed = ALLOWED_VCENTER_READ_ONLY_CALLS if name == "vcenter" else ALLOWED_PRISM_READ_ONLY_CALLS
+    allowed = allowed_read_only_calls(name)
     calls_ok = bool(read_only_calls) and read_only_calls <= allowed
     add_check(checks, f"{name}-read-only-calls", calls_ok, ", ".join(sorted(read_only_calls)) or "none")
     if not calls_ok:
@@ -161,6 +172,21 @@ def validate_endpoint_check(
             errors.append("Prism Central live proof must observe at least one cluster")
         if int_value(counts.get("vms")) == 0:
             warnings.append("Prism Central live proof observed zero existing VMs; target inventory may be empty")
+    if name == "prism-element":
+        if int_value(counts.get("clusters")) <= 0:
+            errors.append("Prism Element live proof must observe cluster identity")
+        if int_value(counts.get("hosts")) <= 0:
+            errors.append("Prism Element live proof must observe at least one host")
+        if int_value(counts.get("vms")) == 0:
+            warnings.append("Prism Element live proof observed zero existing VMs; target inventory may be empty")
+
+
+def allowed_read_only_calls(name: str) -> set[str]:
+    if name == "vcenter":
+        return ALLOWED_VCENTER_READ_ONLY_CALLS
+    if name == "prism-element":
+        return ALLOWED_PRISM_ELEMENT_READ_ONLY_CALLS
+    return ALLOWED_PRISM_READ_ONLY_CALLS
 
 
 def validate_collection_summary_payload(

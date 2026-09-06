@@ -17,7 +17,7 @@ from .collection_audit import validate_collection_audit_file
 from .collection_proof_report import validate_collection_proof_report, write_collection_proof_report
 from .collection_workflow import collect_sources
 from .compatibility_research import validate_compatibility_research
-from .connectors import EndpointConfig, PrismCentralClient, VCenterClient
+from .connectors import EndpointConfig, PrismCentralClient, PrismElementClient, VCenterClient
 from .change_gate import run_change_gate
 from .connectivity_checklist import validate_connectivity_checklist
 from .dependency_sequence import validate_dependency_sequence
@@ -33,7 +33,7 @@ from .github_readiness import DEFAULT_REPO_URL, check_github_readiness, validate
 from .evidence import write_assessment
 from .handoff_package import package_handoff, verify_handoff_package
 from .identity_cutover_plan import validate_identity_cutover_plan
-from .inventory import normalize_prism_inventory, normalize_vcenter_inventory
+from .inventory import normalize_prism_element_inventory, normalize_prism_inventory, normalize_vcenter_inventory
 from .inventory_coverage import validate_inventory_coverage_csv
 from .inventory_validation import validate_inventory, validate_inventory_file
 from .launch_readiness import build_launch_readiness_report, validate_launch_readiness_report, write_launch_readiness_report
@@ -220,6 +220,13 @@ def main(argv: list[str] | None = None) -> int:
     prism_capacity.add_argument("--storage-reserved-percent", type=float, default=30, help="Storage capacity reserved for headroom")
     prism_capacity.add_argument("--cpu-overcommit-ratio", type=float, default=1.0, help="Approved CPU overcommit ratio for planning")
 
+    prism_element = subparsers.add_parser("collect-prism-element", help="Collect read-only Prism Element AHV inventory")
+    prism_element.add_argument("--endpoint", default=os.getenv("NMRCP_PRISM_ELEMENT_URL"), help="Prism Element base URL")
+    prism_element.add_argument("--username", default=os.getenv("NMRCP_PRISM_ELEMENT_USERNAME"), help="Prism Element username")
+    prism_element.add_argument("--password-env", default="NMRCP_PRISM_ELEMENT_PASSWORD", help="Environment variable holding Prism Element password")
+    prism_element.add_argument("--out", required=True, type=Path, help="Normalized Prism Element inventory JSON output path")
+    prism_element.add_argument("--insecure", action="store_true", help="Disable TLS certificate verification")
+
     collect_sources_parser = subparsers.add_parser("collect-sources", help="Collect vCenter inventory, Prism inventory, and Prism capacity")
     collect_sources_parser.add_argument("--vcenter-endpoint", default=os.getenv("NMRCP_VCENTER_URL"), help="vCenter base URL")
     collect_sources_parser.add_argument("--vcenter-username", default=os.getenv("NMRCP_VCENTER_USERNAME"), help="vCenter username")
@@ -270,11 +277,19 @@ def main(argv: list[str] | None = None) -> int:
     probe_prism.add_argument("--password-env", default="NMRCP_PRISM_PASSWORD", help="Environment variable holding password")
     probe_prism.add_argument("--insecure", action="store_true", help="Disable TLS certificate verification")
 
-    live = subparsers.add_parser("live-readiness", help="Run redacted read-only vCenter and Prism Central readiness checks")
+    probe_prism_element = subparsers.add_parser("probe-prism-element", help="Probe Prism Element read-only API reachability")
+    probe_prism_element.add_argument("--endpoint", default=os.getenv("NMRCP_PRISM_ELEMENT_URL"), help="Prism Element base URL")
+    probe_prism_element.add_argument("--username", default=os.getenv("NMRCP_PRISM_ELEMENT_USERNAME"), help="Prism Element username")
+    probe_prism_element.add_argument("--password-env", default="NMRCP_PRISM_ELEMENT_PASSWORD", help="Environment variable holding password")
+    probe_prism_element.add_argument("--insecure", action="store_true", help="Disable TLS certificate verification")
+
+    live = subparsers.add_parser("live-readiness", help="Run redacted read-only vCenter, Prism Central, and Prism Element readiness checks")
     live.add_argument("--out", type=Path, help="Optional JSON proof output path")
     live.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
     live.add_argument("--require-vcenter", action="store_true", help="Fail if vCenter env vars or probe are unavailable")
     live.add_argument("--require-prism", action="store_true", help="Fail if Prism Central env vars or probe are unavailable")
+    live.add_argument("--require-prism-element", action="store_true", help="Fail if Prism Element env vars or probe are unavailable")
+    live.add_argument("--skip-unconfigured-optional", action="store_true", help="Omit optional endpoints that are not configured from the proof status")
     live.add_argument("--insecure", action="store_true", help="Disable TLS certificate verification")
     live.add_argument("--prism-page-size", type=int, default=100, help="Prism list page size for the readiness probe")
     live.add_argument("--prism-max-pages", type=int, default=1, help="Maximum Prism VM pages to count")
@@ -285,6 +300,7 @@ def main(argv: list[str] | None = None) -> int:
     live_proof.add_argument("--source-dir", type=Path, help="Optional directory containing source collection artifacts")
     live_proof.add_argument("--out", type=Path, help="Optional JSON validation proof output path")
     live_proof.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    live_proof.add_argument("--nutanix-only", action="store_true", help="Validate Prism Central and Prism Element DEV proof without requiring vCenter")
 
     enrich = subparsers.add_parser("enrich-dependencies", help="Merge dependency CSV data into inventory JSON")
     enrich.add_argument("--inventory", required=True, type=Path, help="Path to normalized inventory JSON")
@@ -1132,6 +1148,28 @@ def main(argv: list[str] | None = None) -> int:
         write_json(args.out, capacity)
         print(f"Collected Prism target capacity for {len(clusters)} clusters into {args.out}")
         return 0
+    if args.command == "collect-prism-element":
+        config = endpoint_config(args.endpoint, args.username, args.password_env, not args.insecure)
+        client = PrismElementClient(config)
+        cluster = client.get_cluster()
+        hosts = client.list_hosts()
+        storage_containers = client.list_storage_containers()
+        networks = client.list_networks()
+        vms = client.list_vms()
+        inventory = normalize_prism_element_inventory(
+            config.base_url,
+            cluster,
+            hosts,
+            storage_containers,
+            networks,
+            vms,
+        )
+        write_json(args.out, inventory)
+        print(
+            f"Collected Prism Element inventory into {args.out}; "
+            f"hosts={len(hosts)}; networks={len(networks)}; workloads={len(inventory['workloads'])}"
+        )
+        return 0
     if args.command == "collect-sources":
         vcenter_config = endpoint_config(args.vcenter_endpoint, args.vcenter_username, args.vcenter_password_env, not args.insecure)
         prism_config = endpoint_config(args.prism_endpoint, args.prism_username, args.prism_password_env, not args.insecure)
@@ -1239,6 +1277,21 @@ def main(argv: list[str] | None = None) -> int:
             f"sample_vm_count={vm_count}; endpoint_configured=yes"
         )
         return 0
+    if args.command == "probe-prism-element":
+        config = endpoint_config(args.endpoint, args.username, args.password_env, not args.insecure)
+        client = PrismElementClient(config)
+        cluster = client.get_cluster()
+        host_count = len(client.list_hosts())
+        storage_container_count = len(client.list_storage_containers())
+        network_count = len(client.list_networks())
+        vm_count = len(client.list_vms())
+        print(
+            "PASS: Prism Element probe succeeded; "
+            f"cluster_configured={bool(cluster)}; host_count={host_count}; "
+            f"storage_container_count={storage_container_count}; network_count={network_count}; "
+            f"vm_count={vm_count}; endpoint_configured=yes"
+        )
+        return 0
     if args.command == "live-readiness":
         result = run_live_readiness(
             vcenter_config=optional_endpoint_config(
@@ -1253,10 +1306,18 @@ def main(argv: list[str] | None = None) -> int:
                 "NMRCP_PRISM_PASSWORD",
                 verify_tls=not args.insecure,
             ),
+            prism_element_config=optional_endpoint_config(
+                os.getenv("NMRCP_PRISM_ELEMENT_URL"),
+                os.getenv("NMRCP_PRISM_ELEMENT_USERNAME"),
+                "NMRCP_PRISM_ELEMENT_PASSWORD",
+                verify_tls=not args.insecure,
+            ),
             require_vcenter=args.require_vcenter,
             require_prism=args.require_prism,
+            require_prism_element=args.require_prism_element,
             prism_page_size=args.prism_page_size,
             prism_max_pages=args.prism_max_pages,
+            skip_unconfigured_optional=args.skip_unconfigured_optional,
         )
         if args.out:
             write_json(args.out, result)
@@ -1276,6 +1337,7 @@ def main(argv: list[str] | None = None) -> int:
             args.live_readiness,
             collection_summary_path=args.collection_summary,
             source_dir=args.source_dir,
+            nutanix_only=args.nutanix_only,
         )
         if args.out:
             write_json(args.out, result.to_dict())

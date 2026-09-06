@@ -27,7 +27,7 @@ REQUIRED_LIVE_ENDPOINT_PROOF_CHECKS: tuple[str, ...] = (
 REQUIREMENTS: tuple[dict[str, Any], ...] = (
     {
         "id": "read_only_collection",
-        "requirement": "Connect to vCenter and Prism Central in read-only mode.",
+        "requirement": "Connect to vCenter, Prism Central, and Prism Element in read-only mode.",
         "files": (
             "src/nmrcp/connectors.py",
             "src/nmrcp/collection_workflow.py",

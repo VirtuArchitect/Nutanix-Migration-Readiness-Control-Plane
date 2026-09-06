@@ -157,6 +157,65 @@ class LiveProofTests(unittest.TestCase):
             self.assertEqual(payload["schema_version"], "nmrcp_live_endpoint_proof_v1")
             self.assertEqual(payload["status"], "pass")
 
+    def test_cli_validate_nutanix_only_live_proof_without_vcenter(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            live = root / "nutanix-dev-live-readiness.json"
+            out = root / "nutanix-dev-live-proof-validation.json"
+            live.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "nmrcp_live_readiness_v1",
+                        "generated_at": "2026-09-06T12:00:00+00:00",
+                        "status": "pass",
+                        "checks": [
+                            {
+                                "name": "prism-central",
+                                "status": "pass",
+                                "configured": True,
+                                "authenticated": True,
+                                "tls_verification": "disabled",
+                                "read_only_calls": ["/api/nutanix/v3/clusters/list", "/api/nutanix/v3/vms/list"],
+                                "counts": {"clusters": 2, "vms": 2},
+                            },
+                            {
+                                "name": "prism-element",
+                                "status": "pass",
+                                "configured": True,
+                                "authenticated": True,
+                                "tls_verification": "disabled",
+                                "read_only_calls": [
+                                    "/PrismGateway/services/rest/v2.0/cluster",
+                                    "/PrismGateway/services/rest/v2.0/hosts",
+                                    "/PrismGateway/services/rest/v2.0/storage_containers",
+                                    "/PrismGateway/services/rest/v2.0/networks",
+                                    "/PrismGateway/services/rest/v2.0/vms",
+                                ],
+                                "counts": {"clusters": 1, "hosts": 1, "storage_containers": 3, "networks": 1, "vms": 2},
+                            },
+                        ],
+                        "security": {
+                            "mode": "read-only",
+                            "credentials_serialized": False,
+                            "endpoint_values_serialized": False,
+                            "mutation_allowed": False,
+                            "tls_verification": {"prism-central": "disabled", "prism-element": "disabled", "vcenter": "not_configured"},
+                        },
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+            with patch("sys.stdout"):
+                code = main(["validate-live-proof", "--live-readiness", str(live), "--nutanix-only", "--out", str(out)])
+
+            payload = json.loads(out.read_text(encoding="utf-8"))
+            self.assertEqual(code, 0)
+            self.assertEqual(payload["schema_version"], "nmrcp_live_endpoint_proof_v1")
+            self.assertEqual(payload["status"], "warn")
+            self.assertTrue(any("TLS certificate verification was disabled" in warning for warning in payload["warnings"]))
+
 
 def write_valid_proof(root: Path, tls_state: str = "enabled") -> tuple[Path, Path]:
     live = root / "live-readiness.json"

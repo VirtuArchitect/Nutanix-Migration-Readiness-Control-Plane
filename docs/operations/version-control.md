@@ -5,7 +5,7 @@ which console, CLI, and evidence workflow produced an artifact.
 
 ## Current Version
 
-- Product version: `0.3.0-alpha.1`
+- Product version: `0.4.0-alpha.1`
 - Source of truth: `pyproject.toml` and `src/nmrcp/__init__.py`
 - Console visibility: generated operations consoles render the product version
   in the navigation rail and operations ribbon.

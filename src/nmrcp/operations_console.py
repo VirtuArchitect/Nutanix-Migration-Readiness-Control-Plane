@@ -29,6 +29,7 @@ REQUIRED_TEXT = (
     "Connect Environments",
     "vCenter",
     "Prism Central",
+    "Prism Element",
     "ESXi",
     "Nutanix Move",
     "RVTools / Import",
@@ -569,6 +570,7 @@ def write_operations_console(
           <div class="connections">
             {connection_card("vcenter", "vCenter", "Read-only VM, network, guest, tools, snapshot, and dependency source.")}
             {connection_card("prism", "Prism Central", "Read-only AHV/NC2 target inventory, capacity, categories, and collision checks.")}
+            {connection_card("prism-element", "Prism Element", "Read-only AHV cluster, host, storage, network, and VM context.")}
             {connection_card("move", "Nutanix Move", "Approved lab-only payload review and dry-run proof capture.")}
             {connection_card("esxi", "ESXi", "Host-level connectivity gate for approved read or write-intent workflows.")}
             {connection_card("import", "RVTools / Import", "Offline CSV/JSON intake for discovery when live endpoints are not approved.")}
@@ -578,7 +580,7 @@ def write_operations_console(
             <div class="filters" aria-label="Environment gates">
               <label>Environment<select id="environment-select"><option value="dev">Dev</option><option value="uat">UAT</option><option value="production">Production</option></select></label>
               <label>Mode<select id="mode-select"><option value="read">Read</option><option value="write">Write intent</option></select></label>
-              <label>Target<select id="target-select"><option value="pc">Prism Central</option><option value="move">Nutanix Move</option><option value="vcenter">vCenter</option><option value="esxi">ESXi</option></select></label>
+              <label>Target<select id="target-select"><option value="pc">Prism Central</option><option value="pe">Prism Element</option><option value="move">Nutanix Move</option><option value="vcenter">vCenter</option><option value="esxi">ESXi</option></select></label>
             </div>
             <div class="gate-grid" aria-label="Required environment gates">
               <label><input type="checkbox" data-gate="source_scope_approved">Source scope approved</label>
@@ -594,6 +596,7 @@ def write_operations_console(
               <label><input type="checkbox" data-gate="backup_verified">Backup verified</label>
               <label><input type="checkbox" data-gate="production_write_break_glass">Production write break-glass</label>
               <label><input type="checkbox" data-gate="target_cluster_scope">Target cluster scope</label>
+              <label><input type="checkbox" data-gate="cluster_admin_scope">Cluster admin scope</label>
               <label><input type="checkbox" data-gate="move_lab_or_approved_appliance">Move lab/appliance scope</label>
               <label><input type="checkbox" data-gate="vm_scope_approved">VM scope approved</label>
               <label><input type="checkbox" data-gate="host_scope_approved">Host scope approved</label>
@@ -635,8 +638,8 @@ def write_operations_console(
           <aside class="panel" id="workbench">
             <h2>Operator Workbench</h2>
             <ol class="steps">
-              <li><strong>1. Select environment</strong><br><span class="muted">Choose Dev, UAT, or Production and validate read/write gates for PC, Move, vCenter, or ESXi.</span></li>
-              <li><strong>2. Connect source</strong><br><span class="muted">Validate vCenter and Prism Central with read-only proof.</span></li>
+              <li><strong>1. Select environment</strong><br><span class="muted">Choose Dev, UAT, or Production and validate read/write gates for PC, PE, Move, vCenter, or ESXi.</span></li>
+              <li><strong>2. Connect source</strong><br><span class="muted">Validate vCenter, Prism Central, and Prism Element with read-only proof.</span></li>
               <li><strong>3. Discover inventory</strong><br><span class="muted">Collect or import source workload, network, storage, and ownership data.</span></li>
               <li><strong>4. Analyze compatibility</strong><br><span class="muted">Review AHV/NC2 readiness, dependencies, blockers, and what-will-break evidence.</span></li>
               <li id="plan"><strong>5. Build Move Plan</strong><br><span class="muted">Stage only ready/research workloads into the Move plan after review.</span></li>
@@ -705,6 +708,11 @@ def write_operations_console(
     function setProof(message) {{
       document.getElementById("api-proof").textContent = message;
     }}
+    function connectionIdForCheck(name) {{
+      if (name === "prism-central") return "prism";
+      if (name === "prism-element") return "prism-element";
+      return name;
+    }}
     async function postJson(path, body) {{
       setProof(`Running ${{path}}...`);
       const response = await fetch(path, {{
@@ -757,11 +765,13 @@ def write_operations_console(
       const result = await postJson("/api/connection-test", {{
         vcenter: endpointPayload("vcenter"),
         prism: endpointPayload("prism"),
+        prism_element: endpointPayload("prism-element"),
         require_vcenter: true,
-        require_prism: true
+        require_prism: true,
+        require_prism_element: true
       }});
       for (const check of result.result.checks || []) {{
-        const status = document.querySelector(`[data-connection="${{check.name === "prism-central" ? "prism" : check.name}}"] [data-status]`);
+        const status = document.querySelector(`[data-connection="${{connectionIdForCheck(check.name)}}"] [data-status]`);
         if (status) status.textContent = check.status;
       }}
       updateStateSummary(await getJson("/api/state"));
@@ -843,8 +853,8 @@ def validate_operations_console(console_path: Path, assessment_path: Path) -> Op
         errors.append(f"Operations console workload count expected {expected_count}, got {len(workloads)}")
     connections = payload.get("connections") if isinstance(payload.get("connections"), list) else []
     checks += 1
-    if {item.get("id") for item in connections if isinstance(item, dict)} != {"vcenter", "prism", "move", "import"}:
-        errors.append("Operations console must define vcenter, prism, move, and import connections")
+    if {item.get("id") for item in connections if isinstance(item, dict)} != {"vcenter", "prism", "prism-element", "move", "esxi", "import"}:
+        errors.append("Operations console must define vcenter, prism, prism-element, move, esxi, and import connections")
     for leaked in ("vcenter01.corp.local", "migration.owner@example.com"):
         checks += 1
         if leaked in text:
@@ -871,7 +881,9 @@ def console_payload(inventory: dict[str, Any], assessments: list[WorkloadAssessm
         "connections": [
             {"id": "vcenter", "label": "vCenter", "mode": "read-only", "status": "not_configured"},
             {"id": "prism", "label": "Prism Central", "mode": "read-only", "status": "not_configured"},
+            {"id": "prism-element", "label": "Prism Element", "mode": "read-only", "status": "not_configured"},
             {"id": "move", "label": "Nutanix Move", "mode": "approved_lab_only", "status": "proof_required"},
+            {"id": "esxi", "label": "ESXi", "mode": "gate-only", "status": "gate_only"},
             {"id": "import", "label": "RVTools / Import", "mode": "offline", "status": "available"},
         ],
         "waves": [{"name": wave.name, "workload_count": len(wave.workload_ids)} for wave in waves],

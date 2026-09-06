@@ -87,7 +87,7 @@ substitute for human review before sharing artifacts outside the migration team.
   record and `NMRCP_MOVE_LAB_ACK=I_UNDERSTAND_LAB_ONLY`, and still does not
   connect to Nutanix Move.
 - Environment access validation gates Dev, UAT, and Production read/write
-  intent for PC, Move, vCenter, and ESXi. Write mode remains policy evaluation
+  intent for PC, PE, Move, vCenter, and ESXi. Write mode remains policy evaluation
   only and does not execute mutating actions.
 - Migration runbooks are generated for human review and cannot execute
   migration actions.

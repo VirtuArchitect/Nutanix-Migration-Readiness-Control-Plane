@@ -17,8 +17,8 @@ http://localhost:8080/
 
 Tester workflow:
 
-1. Open the console and enter approved lab vCenter and Prism Central endpoint
-   details.
+1. Open the console and enter approved lab vCenter, Prism Central, and Prism
+   Element endpoint details.
 2. Select **Test Read-only Connections** to run the redacted
    `/api/connection-test` proof. The proof is written locally as
    `live-readiness.json` under the console data directory.
@@ -50,7 +50,7 @@ Published alpha images are produced by the GitHub `Publish Docker image`
 workflow:
 
 ```text
-ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.3.0-alpha.1
+ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.4.0-alpha.1
 ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:alpha
 ```
 
@@ -59,11 +59,11 @@ Run a published image directly:
 ```powershell
 docker run --rm -p 8080:8080 `
   -v ${PWD}\data:/data `
-  ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.3.0-alpha.1
+  ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.4.0-alpha.1
 ```
 
-The image does not contact vCenter, Prism Central, Nutanix Move, AHV, or NC2 by
-itself. Live endpoint testing and collection require explicit operator action in
+The image does not contact vCenter, Prism Central, Prism Element, Nutanix Move,
+AHV, or NC2 by itself. Live endpoint testing and collection require explicit operator action in
 the browser or CLI. Credentials are used only for the active local request; the
 redacted proof files and `console-state.json` record read-only API paths,
 counts, TLS posture, local evidence paths, and `mutating_calls=0`, not

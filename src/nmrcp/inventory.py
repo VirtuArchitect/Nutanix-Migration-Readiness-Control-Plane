@@ -186,6 +186,81 @@ def normalize_prism_inventory(
     return {"source": source, "workloads": workloads}
 
 
+def normalize_prism_element_inventory(
+    endpoint: str,
+    cluster: dict[str, Any],
+    hosts: list[dict[str, Any]],
+    storage_containers: list[dict[str, Any]],
+    networks: list[dict[str, Any]],
+    vms: list[dict[str, Any]],
+) -> dict[str, Any]:
+    workloads = []
+    for vm in vms:
+        workload_id = str(vm.get("uuid") or vm.get("vm_uuid") or vm.get("id") or vm.get("name") or "unknown")
+        memory_mib = vm.get("memory_mb") or vm.get("memory_mib") or vm.get("memory_size_mib") or 0
+        disks = vm.get("vm_disk_info") or vm.get("disks") or []
+        nics = vm.get("vm_nics") or vm.get("nics") or []
+        workloads.append(
+            {
+                "id": workload_id,
+                "name": str(vm.get("name") or workload_id),
+                "owner": "Unassigned",
+                "tier": "unknown",
+                "guest_os": str(vm.get("guest_os") or vm.get("guestOperatingSystem") or ""),
+                "cpu": int(vm.get("num_vcpus") or vm.get("num_cores_per_vcpu") or 0),
+                "memory_gib": round(int(memory_mib or 0) / 1024, 2),
+                "disk_gib": _sum_prism_element_disk_gib(disks),
+                "storage": {
+                    "disk_count": len([disk for disk in disks if isinstance(disk, dict)]),
+                    "thin_provisioned": True,
+                    "raw_device_mapping": False,
+                    "shared_disk": False,
+                    "independent_disk": False,
+                    "encrypted": False,
+                    "storage_containers": _prism_element_storage_names(disks),
+                },
+                "power_state": vm.get("power_state") or vm.get("powerState"),
+                "tags": [],
+                "networking": {
+                    "uses_vds": False,
+                    "uses_nsx": False,
+                    "vlans": _prism_element_network_names(nics),
+                },
+                "guest_identity": guest_identity_from_values(
+                    hostname=vm.get("hostname") or vm.get("host_name"),
+                    dns_name=vm.get("dns_name"),
+                    ip_addresses=vm.get("ip_addresses") or vm.get("ip_address"),
+                ),
+                "snapshots": {"count": int(vm.get("snapshot_count") or 0)},
+                "tools": {"vmware_tools": False, "virtio_ready": True, "status": ""},
+                "backup": {"protected": False, "last_success_hours": 0},
+                "vendor_support": ["ahv", "nc2"],
+                "dependencies": [],
+            }
+        )
+    source = normalized_source("prism-element-v2", endpoint)
+    source["collection_audit"] = {
+        "schema": "nmrcp_collection_audit_v1",
+        "mode": "read-only",
+        "credential_storage": "not_persisted",
+        "endpoint_configured": bool(endpoint),
+        "api_paths": [
+            "/PrismGateway/services/rest/v2.0/cluster",
+            "/PrismGateway/services/rest/v2.0/hosts",
+            "/PrismGateway/services/rest/v2.0/storage_containers",
+            "/PrismGateway/services/rest/v2.0/networks",
+            "/PrismGateway/services/rest/v2.0/vms",
+        ],
+        "cluster_count": 1 if cluster else 0,
+        "host_count": len(hosts),
+        "storage_container_count": len(storage_containers),
+        "network_count": len(networks),
+        "entities_count": len(vms),
+        "mutating_calls": 0,
+    }
+    return {"source": source, "workloads": workloads}
+
+
 def _normalize_tags(tags: list[Any]) -> list[str]:
     normalized: list[str] = []
     for tag in tags:
@@ -399,6 +474,43 @@ def _sum_prism_disk_gib(disks: list[Any]) -> float:
             size = (disk.get("data_source_reference") or {}).get("disk_size_bytes")
         total_bytes += int(size or 0)
     return round(total_bytes / (1024**3), 2)
+
+
+def _sum_prism_element_disk_gib(disks: list[Any]) -> float:
+    total_bytes = 0
+    for disk in disks:
+        if not isinstance(disk, dict):
+            continue
+        total_bytes += int(
+            disk.get("size")
+            or disk.get("disk_size")
+            or disk.get("disk_size_bytes")
+            or disk.get("capacity_bytes")
+            or 0
+        )
+    return round(total_bytes / (1024**3), 2)
+
+
+def _prism_element_storage_names(disks: list[Any]) -> list[str]:
+    names: list[str] = []
+    for disk in disks:
+        if not isinstance(disk, dict):
+            continue
+        name = disk.get("storage_container_name") or disk.get("container_name")
+        if name and str(name) not in names:
+            names.append(str(name))
+    return names
+
+
+def _prism_element_network_names(nics: list[Any]) -> list[str]:
+    names: list[str] = []
+    for nic in nics:
+        if not isinstance(nic, dict):
+            continue
+        name = nic.get("network_name") or nic.get("network_uuid") or nic.get("vlan_id")
+        if name and str(name) not in names:
+            names.append(str(name))
+    return names
 
 
 def _prism_storage_posture(disks: list[Any]) -> dict[str, Any]:

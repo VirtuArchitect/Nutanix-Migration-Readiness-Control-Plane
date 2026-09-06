@@ -45,23 +45,98 @@ class LiveReadinessTests(unittest.TestCase):
             def list_vms(self, page_size=100, max_pages=1):
                 return [{"metadata": {"uuid": "vm-1"}}]
 
+        class FakePrismElement:
+            def __init__(self, config):
+                self.config = config
+
+            def get_cluster(self):
+                return {"name": "dev-ahv"}
+
+            def list_hosts(self):
+                return [{"uuid": "host-1"}]
+
+            def list_storage_containers(self):
+                return [{"name": "container-1"}]
+
+            def list_networks(self):
+                return [{"name": "net-1"}]
+
+            def list_vms(self):
+                return [{"uuid": "vm-2"}]
+
         with patch("nmrcp.live_readiness.VCenterClient", FakeVCenter), patch(
             "nmrcp.live_readiness.PrismCentralClient", FakePrism
+        ), patch(
+            "nmrcp.live_readiness.PrismElementClient", FakePrismElement
         ):
             result = run_live_readiness(
                 vcenter_config=EndpointConfig("https://vcenter.example.test", "admin", "super-secret"),
                 prism_config=EndpointConfig("https://prism.example.test:9440", "admin", "super-secret"),
+                prism_element_config=EndpointConfig("https://pe.example.test:9440", "admin", "super-secret"),
             )
 
         self.assertEqual(result["status"], "pass")
         self.assertEqual(result["security"]["tls_verification"]["vcenter"], "enabled")
         self.assertEqual(result["security"]["tls_verification"]["prism-central"], "enabled")
+        self.assertEqual(result["security"]["tls_verification"]["prism-element"], "enabled")
         self.assertTrue(all(check["tls_verification"] == "enabled" for check in result["checks"]))
+        prism_element = next(check for check in result["checks"] if check["name"] == "prism-element")
+        self.assertEqual(prism_element["counts"]["hosts"], 1)
         serialized = json.dumps(result)
         self.assertNotIn("super-secret", serialized)
         self.assertNotIn("vcenter.example.test", serialized)
         self.assertNotIn("prism.example.test", serialized)
+        self.assertNotIn("pe.example.test", serialized)
         self.assertIn("/api/vcenter/vm", serialized)
+        self.assertIn("/PrismGateway/services/rest/v2.0/vms", serialized)
+
+    def test_nutanix_only_dev_proof_can_skip_unconfigured_vcenter(self):
+        class FakePrism:
+            def __init__(self, config):
+                self.config = config
+
+            def list_clusters(self, page_size=100):
+                return [{"metadata": {"uuid": "cluster-1"}}]
+
+            def list_vms(self, page_size=100, max_pages=1):
+                return []
+
+        class FakePrismElement:
+            def __init__(self, config):
+                self.config = config
+
+            def get_cluster(self):
+                return {"name": "dev-ahv"}
+
+            def list_hosts(self):
+                return [{"uuid": "host-1"}]
+
+            def list_storage_containers(self):
+                return [{"name": "container-1"}]
+
+            def list_networks(self):
+                return [{"name": "net-1"}]
+
+            def list_vms(self):
+                return [{"uuid": "vm-1"}]
+
+        with patch("nmrcp.live_readiness.PrismCentralClient", FakePrism), patch(
+            "nmrcp.live_readiness.PrismElementClient", FakePrismElement
+        ):
+            result = run_live_readiness(
+                prism_config=EndpointConfig("https://pc.example.test:9440", "admin", "super-secret"),
+                prism_element_config=EndpointConfig("https://pe.example.test:9440", "admin", "super-secret"),
+                require_prism=True,
+                require_prism_element=True,
+                skip_unconfigured_optional=True,
+            )
+
+        self.assertEqual(result["status"], "pass")
+        self.assertEqual([check["name"] for check in result["checks"]], ["prism-central", "prism-element"])
+        serialized = json.dumps(result)
+        self.assertNotIn("super-secret", serialized)
+        self.assertNotIn("pc.example.test", serialized)
+        self.assertNotIn("pe.example.test", serialized)
 
     def test_configured_insecure_endpoint_reports_disabled_tls_without_endpoint(self):
         class FakeVCenter:
@@ -107,6 +182,9 @@ class LiveReadinessTests(unittest.TestCase):
                     "NMRCP_PRISM_URL": "",
                     "NMRCP_PRISM_USERNAME": "",
                     "NMRCP_PRISM_PASSWORD": "",
+                    "NMRCP_PRISM_ELEMENT_URL": "",
+                    "NMRCP_PRISM_ELEMENT_USERNAME": "",
+                    "NMRCP_PRISM_ELEMENT_PASSWORD": "",
                 },
                 clear=False,
             ):

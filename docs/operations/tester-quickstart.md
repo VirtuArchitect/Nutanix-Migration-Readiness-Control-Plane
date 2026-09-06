@@ -5,14 +5,14 @@ connect, collect read-only source evidence, and generate readiness output.
 
 Use the Docker or Python served console for real connectivity. The GitHub Pages
 demo is a static preview only; it cannot connect to vCenter, Prism Central,
-Nutanix Move, AHV, NC2, ESXi, or customer environments without the local API
-server.
+Prism Element, Nutanix Move, AHV, NC2, ESXi, or customer environments without
+the local API server.
 
 ## Safety Rules
 
 - Use lab or explicitly approved source environments only.
-- Use read-only vCenter and Prism Central accounts.
-- Use environment gates before any read/write-intent workflow for PC, Move,
+- Use read-only vCenter, Prism Central, and Prism Element accounts.
+- Use environment gates before any read/write-intent workflow for PC, PE, Move,
   vCenter, ESXi, AHV, NC2, or production targets.
 - Do not paste credentials, endpoint names, FQDNs, IP addresses, or customer
   identifiers into GitHub issues.
@@ -39,7 +39,7 @@ Then run the browser workflow:
 
 1. Select Dev, UAT, or Production, choose the target and read/write intent, then
    select **Validate Environment Gates**.
-2. Enter approved vCenter and Prism Central connection details.
+2. Enter approved vCenter, Prism Central, and Prism Element connection details.
 3. Select **Test Read-only Connections**.
 4. Select **Collect Source Evidence** after the connection proof passes.
 5. Select **Run Readiness Assessment** to score the collected inventory.
@@ -106,6 +106,28 @@ python -m nmrcp.cli environment-access `
 
 See [environment-access-gates.md](environment-access-gates.md).
 
+To create a Nutanix-only DEV proof before vCenter is in scope:
+
+```powershell
+$env:PYTHONPATH = "src"
+$env:NMRCP_PRISM_URL = "https://prism-central.example.com:9440"
+$env:NMRCP_PRISM_USERNAME = "admin"
+$env:NMRCP_PRISM_PASSWORD = "<local secret>"
+$env:NMRCP_PRISM_ELEMENT_URL = "https://prism-element.example.com:9440"
+$env:NMRCP_PRISM_ELEMENT_USERNAME = "admin"
+$env:NMRCP_PRISM_ELEMENT_PASSWORD = "<local secret>"
+python -m nmrcp.cli live-readiness `
+  --require-prism `
+  --require-prism-element `
+  --skip-unconfigured-optional `
+  --insecure `
+  --out outputs\nutanix-dev-live-readiness.json
+python -m nmrcp.cli collect-prism-element `
+  --insecure `
+  --out outputs\prism-element-inventory.json
+python -m nmrcp.cli validate-collection-audit --inventory outputs\prism-element-inventory.json
+```
+
 ## What To Report
 
 Open a **Tester Connection Report** issue and include:
@@ -113,7 +135,7 @@ Open a **Tester Connection Report** issue and include:
 - Commit SHA or release tag tested.
 - NMRCP run ID and product version from `assessment/run_metadata`.
 - Runtime path: Docker Compose or Python.
-- Source type tested: vCenter, Prism Central, RVTools import, or sample data.
+- Source type tested: vCenter, Prism Central, Prism Element, RVTools import, or sample data.
 - Whether connection proof, collection, and readiness assessment passed.
 - Counts from redacted summaries: workload count, ready count, blocked count,
   and top blocker categories.

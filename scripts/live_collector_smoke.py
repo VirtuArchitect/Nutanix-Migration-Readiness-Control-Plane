@@ -212,10 +212,22 @@ def run_smoke() -> int:
     os.environ["NMRCP_PRISM_URL"] = prism.base_url
     os.environ["NMRCP_PRISM_USERNAME"] = "local-user"
     os.environ["NMRCP_PRISM_PASSWORD"] = "local-only-secret"
+    os.environ.pop("NMRCP_PRISM_ELEMENT_URL", None)
+    os.environ.pop("NMRCP_PRISM_ELEMENT_USERNAME", None)
+    os.environ.pop("NMRCP_PRISM_ELEMENT_PASSWORD", None)
     vcenter.start()
     prism.start()
     try:
-        result = main(["live-readiness", "--require-vcenter", "--require-prism", "--out", str(live_readiness)])
+        result = main(
+            [
+                "live-readiness",
+                "--require-vcenter",
+                "--require-prism",
+                "--skip-unconfigured-optional",
+                "--out",
+                str(live_readiness),
+            ]
+        )
         if result != 0:
             raise AssertionError(f"Command failed with {result}: live-readiness")
         vcenter.requests.clear()

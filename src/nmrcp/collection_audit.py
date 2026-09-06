@@ -114,7 +114,7 @@ def _validate_collector_contract(
     api_paths = audit.get("api_paths")
     if isinstance(api_paths, list):
         for index, path in enumerate(api_paths):
-            if not isinstance(path, str) or not path.startswith("/api/"):
+            if not isinstance(path, str) or not (path.startswith("/api/") or path.startswith("/PrismGateway/services/rest/")):
                 errors.append(f"source.collection_audit.api_paths[{index}] must be an API path")
 
     if _looks_like_vcenter(audit, collector):
@@ -122,6 +122,9 @@ def _validate_collector_contract(
         return
     if _looks_like_prism(audit, collector):
         _validate_prism_contract(audit, workload_count, errors)
+        return
+    if _looks_like_prism_element(audit, collector):
+        _validate_prism_element_contract(audit, workload_count, errors)
         return
     if collector == "rvtools-csv" or audit.get("mode") == "offline-import":
         _validate_rvtools_contract(audit, workload_count, errors)
@@ -168,6 +171,29 @@ def _validate_prism_contract(audit: dict[str, Any], workload_count: int, errors:
             errors.append(f"Prism audit {key} must be a positive integer")
 
 
+def _validate_prism_element_contract(audit: dict[str, Any], workload_count: int, errors: list[str]) -> None:
+    required_paths = {
+        "/PrismGateway/services/rest/v2.0/cluster",
+        "/PrismGateway/services/rest/v2.0/hosts",
+        "/PrismGateway/services/rest/v2.0/storage_containers",
+        "/PrismGateway/services/rest/v2.0/networks",
+        "/PrismGateway/services/rest/v2.0/vms",
+    }
+    paths = set(audit.get("api_paths") or [])
+    missing = sorted(required_paths - paths)
+    if missing:
+        errors.append(f"Prism Element audit missing API paths: {', '.join(missing)}")
+    if audit.get("mode") != "read-only":
+        errors.append("Prism Element audit mode must be read-only")
+    if audit.get("endpoint_configured") is not True:
+        errors.append("Prism Element audit endpoint_configured must be true")
+    if _int_value(audit.get("entities_count")) != workload_count:
+        errors.append("Prism Element audit entities_count must match inventory workload count")
+    for key in ("cluster_count", "host_count", "storage_container_count", "network_count"):
+        if _int_value(audit.get(key)) < 0:
+            errors.append(f"Prism Element audit {key} must be a non-negative integer")
+
+
 def _validate_rvtools_contract(audit: dict[str, Any], workload_count: int, errors: list[str]) -> None:
     if audit.get("mode") != "offline-import":
         errors.append("RVTools audit mode must be offline-import")
@@ -190,6 +216,11 @@ def _looks_like_vcenter(audit: dict[str, Any], collector: str) -> bool:
 def _looks_like_prism(audit: dict[str, Any], collector: str) -> bool:
     paths = set(audit.get("api_paths") or [])
     return collector == "prism-central-v3" or "/api/nutanix/v3/vms/list" in paths
+
+
+def _looks_like_prism_element(audit: dict[str, Any], collector: str) -> bool:
+    paths = set(audit.get("api_paths") or [])
+    return collector == "prism-element-v2" or "/PrismGateway/services/rest/v2.0/vms" in paths
 
 
 def _walk_audit(value: Any, path: str = "source.collection_audit") -> list[tuple[str, str, Any]]:

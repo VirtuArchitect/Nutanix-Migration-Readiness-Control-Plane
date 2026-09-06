@@ -7,11 +7,12 @@ from typing import Any
 ENVIRONMENT_ACCESS_SCHEMA_VERSION = "nmrcp_environment_access_v1"
 
 ENVIRONMENTS = ("dev", "uat", "production")
-TARGETS = ("pc", "move", "vcenter", "esxi")
+TARGETS = ("pc", "pe", "move", "vcenter", "esxi")
 MODES = ("read", "write")
 
 TARGET_LABELS = {
     "pc": "Prism Central",
+    "pe": "Prism Element",
     "move": "Nutanix Move",
     "vcenter": "vCenter",
     "esxi": "ESXi",
@@ -52,6 +53,7 @@ ENVIRONMENT_GATES = {
 
 TARGET_WRITE_GATES = {
     "pc": ("target_cluster_scope",),
+    "pe": ("target_cluster_scope", "cluster_admin_scope"),
     "move": ("move_lab_or_approved_appliance",),
     "vcenter": ("vm_scope_approved",),
     "esxi": ("host_scope_approved",),

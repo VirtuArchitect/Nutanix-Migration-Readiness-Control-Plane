@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from nmrcp.cli import main
 from nmrcp.collection_audit import validate_collection_audit
-from nmrcp.inventory import normalize_prism_inventory, normalize_vcenter_inventory
+from nmrcp.inventory import normalize_prism_element_inventory, normalize_prism_inventory, normalize_vcenter_inventory
 from nmrcp.rvtools import import_rvtools_directory
 
 
@@ -37,6 +37,21 @@ class CollectionAuditValidationTests(unittest.TestCase):
 
         self.assertTrue(result.ok, result.errors)
         self.assertEqual(result.collector, "prism-central-v3")
+
+    def test_validates_prism_element_audit_contract(self):
+        inventory = normalize_prism_element_inventory(
+            "https://pe.example.test:9440",
+            {"name": "dev-ahv"},
+            [{"uuid": "host-1"}],
+            [{"name": "container-1"}],
+            [{"name": "net-1"}],
+            [{"uuid": "vm-1", "name": "ahv-vm-01"}],
+        )
+
+        result = validate_collection_audit(inventory)
+
+        self.assertTrue(result.ok, result.errors)
+        self.assertEqual(result.collector, "prism-element-v2")
 
     def test_validates_rvtools_audit_contract(self):
         inventory = import_rvtools_directory(Path("examples/rvtools"), source_name="sample-rvtools")

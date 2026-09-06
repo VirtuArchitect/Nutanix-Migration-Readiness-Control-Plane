@@ -161,11 +161,14 @@ class ConsoleRequestHandler(SimpleHTTPRequestHandler):
 def api_connection_test(payload: dict[str, Any], data_dir: Path) -> dict[str, Any]:
     vcenter_config = endpoint_config_from_payload(payload.get("vcenter"))
     prism_config = endpoint_config_from_payload(payload.get("prism"))
+    prism_element_config = endpoint_config_from_payload(payload.get("prism_element") or payload.get("pe"))
     result = run_live_readiness(
         vcenter_config=vcenter_config,
         prism_config=prism_config,
+        prism_element_config=prism_element_config,
         require_vcenter=bool(payload.get("require_vcenter")),
         require_prism=bool(payload.get("require_prism")),
+        require_prism_element=bool(payload.get("require_prism_element")),
     )
     data_dir.mkdir(parents=True, exist_ok=True)
     proof_path = data_dir / "live-readiness.json"

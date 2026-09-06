@@ -3,7 +3,7 @@
 Know exactly what will break before you migrate from VMware to Nutanix, then
 turn that evidence into a controlled migration plan.
 
-Current version: `0.3.0-alpha.1`
+Current version: `0.4.0-alpha.1`
 
 NMRCP is the Nutanix Provider Edition of **Migration Readiness Control Plane
 (MRCP)**. MRCP is the parent architecture; this repo is the validated
@@ -44,9 +44,9 @@ docker compose up --build
 Then open `http://localhost:8080/`. The container serves the same local-first
 console and health endpoint without contacting infrastructure by itself. After
 an operator enters approved runtime connection details, testers can use the
-browser to test approved read-only vCenter and Prism Central connections,
+browser to test approved read-only vCenter, Prism Central, and Prism Element connections,
 collect local source evidence, run readiness against collected inventory, and
-validate read/write-intent gates for PC, Move, vCenter, ESXi, AHV, NC2, and
+validate read/write-intent gates for PC, PE, Move, vCenter, ESXi, AHV, NC2, and
 environment-specific workflows. See `docs/operations/docker.md`,
 `docs/operations/tester-quickstart.md`, and
 `docs/operations/tester-alpha-release.md`.
@@ -65,7 +65,7 @@ score, migration waves, and pre/post validation checklists.
 
 - Use a provider-aware source/target model while keeping VMware-to-Nutanix as
   the only active validated provider family.
-- Connect to vCenter and Prism Central in read-only mode.
+- Connect to vCenter, Prism Central, and Prism Element in read-only mode.
 - Inventory workloads, networks, storage posture, guest OS details, snapshots,
   tools/drivers, tags, ownership, and dependencies.
 - Score each workload for AHV/NC2 migration readiness.
@@ -130,7 +130,7 @@ include in a tester connection report. After a local console run, testers can
 select **Prepare Tester Report** in the UI or run `tester-report` from the CLI
 to generate a redacted local feedback summary.
 Use `docs/operations/environment-access-gates.md` to validate Dev, UAT, and
-Production read/write gates for PC, Move, vCenter, and ESXi before connector
+Production read/write gates for PC, PE, Move, vCenter, and ESXi before connector
 workflows proceed.
 
 Run the full assessment-to-handoff workflow:
@@ -903,6 +903,38 @@ python -m nmrcp.cli validate-live-proof `
 ```
 
 See `docs/operations/live-endpoint-proof.md`.
+
+Prism Element:
+
+```powershell
+$env:PYTHONPATH = "src"
+$env:NMRCP_PRISM_ELEMENT_PASSWORD = "<local secret>"
+python -m nmrcp.cli probe-prism-element `
+  --endpoint https://prism-element.example.com:9440 `
+  --username admin `
+  --insecure
+python -m nmrcp.cli collect-prism-element `
+  --endpoint https://prism-element.example.com:9440 `
+  --username admin `
+  --insecure `
+  --out outputs/prism-element-inventory.json
+python -m nmrcp.cli validate-collection-audit --inventory outputs/prism-element-inventory.json
+```
+
+Use `--insecure` only for approved DEV/lab endpoints with self-signed
+certificates. The generated proof records TLS verification as `disabled`
+without serializing endpoint values or credentials.
+
+For a Nutanix-only DEV proof when vCenter is not in scope yet:
+
+```powershell
+python -m nmrcp.cli live-readiness `
+  --require-prism `
+  --require-prism-element `
+  --skip-unconfigured-optional `
+  --insecure `
+  --out outputs\nutanix-dev-live-readiness.json
+```
 
 After access is approved, collect both source systems into local artifacts:
 

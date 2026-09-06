@@ -98,6 +98,54 @@ class CliTests(unittest.TestCase):
             self.assertEqual(audit["max_pages"], 20)
             self.assertEqual(audit["entities_count"], 1)
 
+    def test_collect_prism_element_command_uses_env_password_and_writes_inventory(self):
+        class FakePrismElement:
+            def __init__(self, config):
+                self.config = config
+
+            def get_cluster(self):
+                return {"name": "dev-ahv"}
+
+            def list_hosts(self):
+                return [{"uuid": "host-1"}]
+
+            def list_storage_containers(self):
+                return [{"name": "container-1"}]
+
+            def list_networks(self):
+                return [{"name": "net-1"}]
+
+            def list_vms(self):
+                return [{"uuid": "vm-1", "name": "ahv-vm-01", "num_vcpus": 2, "memory_mb": 4096}]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out_path = Path(tmp) / "prism-element.json"
+            with patch("nmrcp.cli.PrismElementClient", FakePrismElement), patch.dict(
+                "os.environ",
+                {"NMRCP_PRISM_ELEMENT_PASSWORD": "synthetic-password"},
+            ):
+                code = main(
+                    [
+                        "collect-prism-element",
+                        "--endpoint",
+                        "https://pe.example.test:9440",
+                        "--username",
+                        "admin",
+                        "--out",
+                        str(out_path),
+                    ]
+                )
+
+            self.assertEqual(code, 0)
+            payload = json.loads(out_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["source"]["system"], "prism-element-v2")
+            self.assertEqual(payload["workloads"][0]["name"], "ahv-vm-01")
+            audit = payload["source"]["collection_audit"]
+            self.assertEqual(audit["host_count"], 1)
+            self.assertEqual(audit["network_count"], 1)
+            self.assertEqual(audit["entities_count"], 1)
+            self.assertEqual(audit["mutating_calls"], 0)
+
     def test_collect_vcenter_command_writes_inventory(self):
         class FakeVCenter:
             def __init__(self, config):
@@ -250,6 +298,49 @@ class CliTests(unittest.TestCase):
         self.assertIn("sample_vm_count=1", output)
         self.assertNotIn("synthetic-password", output)
         self.assertNotIn("pc.example.test", output)
+        self.assertNotIn("admin", output)
+
+    def test_probe_prism_element_redacts_connection_values(self):
+        class FakePrismElement:
+            def __init__(self, config):
+                self.config = config
+
+            def get_cluster(self):
+                return {"name": "dev-ahv"}
+
+            def list_hosts(self):
+                return [{"uuid": "host-1"}]
+
+            def list_storage_containers(self):
+                return [{"name": "container-1"}]
+
+            def list_networks(self):
+                return [{"name": "net-1"}]
+
+            def list_vms(self):
+                return [{"uuid": "vm-1"}]
+
+        stream = io.StringIO()
+        with patch("nmrcp.cli.PrismElementClient", FakePrismElement), patch.dict(
+            "os.environ",
+            {"NMRCP_PRISM_ELEMENT_PASSWORD": "synthetic-password"},
+        ), redirect_stdout(stream):
+            code = main(
+                [
+                    "probe-prism-element",
+                    "--endpoint",
+                    "https://pe.example.test:9440",
+                    "--username",
+                    "admin",
+                ]
+            )
+
+        output = stream.getvalue()
+        self.assertEqual(code, 0)
+        self.assertIn("host_count=1", output)
+        self.assertIn("vm_count=1", output)
+        self.assertNotIn("synthetic-password", output)
+        self.assertNotIn("pe.example.test", output)
         self.assertNotIn("admin", output)
 
     def test_assess_command_can_merge_dependency_csv(self):

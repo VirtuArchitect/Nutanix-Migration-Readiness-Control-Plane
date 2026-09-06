@@ -1,6 +1,6 @@
 import unittest
 
-from nmrcp.inventory import normalize_prism_inventory, normalize_vcenter_inventory
+from nmrcp.inventory import normalize_prism_element_inventory, normalize_prism_inventory, normalize_vcenter_inventory
 
 
 class InventoryNormalizationTests(unittest.TestCase):
@@ -186,6 +186,47 @@ class InventoryNormalizationTests(unittest.TestCase):
         self.assertEqual(audit["mutating_calls"], 0)
         self.assertNotIn("https://pc.example.test:9440", str(audit))
         self.assertNotIn("password", str(audit).lower())
+
+    def test_prism_element_normalization_maps_ahv_context(self):
+        inventory = normalize_prism_element_inventory(
+            "https://pe.example.test:9440",
+            {"name": "dev-ahv"},
+            [{"uuid": "host-1"}],
+            [{"name": "default-container"}],
+            [{"name": "vlan-120"}],
+            [
+                {
+                    "uuid": "vm-1",
+                    "name": "ahv-vm-01",
+                    "num_vcpus": 4,
+                    "memory_mb": 8192,
+                    "power_state": "on",
+                    "vm_disk_info": [{"disk_size_bytes": 107374182400, "storage_container_name": "default-container"}],
+                    "vm_nics": [{"network_name": "vlan-120"}],
+                    "ip_addresses": ["10.10.120.21"],
+                }
+            ],
+        )
+
+        workload = inventory["workloads"][0]
+        self.assertEqual(workload["id"], "vm-1")
+        self.assertEqual(workload["name"], "ahv-vm-01")
+        self.assertEqual(workload["cpu"], 4)
+        self.assertEqual(workload["memory_gib"], 8)
+        self.assertEqual(workload["disk_gib"], 100)
+        self.assertEqual(workload["storage"]["storage_containers"], ["default-container"])
+        self.assertEqual(workload["networking"]["vlans"], ["vlan-120"])
+        self.assertEqual(workload["guest_identity"]["valid_ip_addresses"], ["10.10.120.21"])
+        audit = inventory["source"]["collection_audit"]
+        self.assertEqual(audit["schema"], "nmrcp_collection_audit_v1")
+        self.assertEqual(audit["mode"], "read-only")
+        self.assertEqual(audit["host_count"], 1)
+        self.assertEqual(audit["storage_container_count"], 1)
+        self.assertEqual(audit["network_count"], 1)
+        self.assertEqual(audit["entities_count"], 1)
+        self.assertEqual(audit["mutating_calls"], 0)
+        self.assertIn("/PrismGateway/services/rest/v2.0/vms", audit["api_paths"])
+        self.assertNotIn("https://pe.example.test:9440", str(audit))
 
 
 if __name__ == "__main__":

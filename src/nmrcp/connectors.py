@@ -67,6 +67,21 @@ CONNECTOR_CAPABILITIES: dict[str, ConnectorCapability] = {
         credential_policy="request_only_not_persisted",
         status="alpha_read_only",
     ),
+    "prism-element": ConnectorCapability(
+        id="prism-element",
+        label="Prism Element",
+        modes=("read",),
+        read_only_paths=(
+            "/PrismGateway/services/rest/v2.0/cluster",
+            "/PrismGateway/services/rest/v2.0/hosts",
+            "/PrismGateway/services/rest/v2.0/storage_containers",
+            "/PrismGateway/services/rest/v2.0/networks",
+            "/PrismGateway/services/rest/v2.0/vms",
+        ),
+        write_enabled=False,
+        credential_policy="request_only_not_persisted",
+        status="alpha_read_only",
+    ),
     "nutanix-move": ConnectorCapability(
         id="nutanix-move",
         label="Nutanix Move",
@@ -267,3 +282,35 @@ class PrismCentralClient:
             if not page_entities or (isinstance(total, int) and offset >= total):
                 break
         return entities
+
+
+class PrismElementClient:
+    def __init__(self, config: EndpointConfig):
+        self.http = ReadOnlyHttpClient(config)
+
+    def get_cluster(self) -> dict[str, Any]:
+        return self.http.get_json("/PrismGateway/services/rest/v2.0/cluster")
+
+    def list_hosts(self) -> list[dict[str, Any]]:
+        return _entities(self.http.get_json("/PrismGateway/services/rest/v2.0/hosts"), "Prism Element hosts")
+
+    def list_storage_containers(self) -> list[dict[str, Any]]:
+        return _entities(
+            self.http.get_json("/PrismGateway/services/rest/v2.0/storage_containers"),
+            "Prism Element storage containers",
+        )
+
+    def list_networks(self) -> list[dict[str, Any]]:
+        return _entities(self.http.get_json("/PrismGateway/services/rest/v2.0/networks"), "Prism Element networks")
+
+    def list_vms(self) -> list[dict[str, Any]]:
+        return _entities(self.http.get_json("/PrismGateway/services/rest/v2.0/vms"), "Prism Element VMs")
+
+
+def _entities(response: dict[str, Any], label: str) -> list[dict[str, Any]]:
+    entities = response.get("entities")
+    if entities is None:
+        entities = response.get("value", [])
+    if not isinstance(entities, list):
+        raise RuntimeError(f"{label} response did not contain entities")
+    return [item for item in entities if isinstance(item, dict)]

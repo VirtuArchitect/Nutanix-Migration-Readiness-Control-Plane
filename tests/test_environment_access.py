@@ -27,6 +27,12 @@ class EnvironmentAccessTests(unittest.TestCase):
         self.assertIn("production_write_break_glass", gates)
         self.assertIn("move_lab_or_approved_appliance", gates)
 
+    def test_prism_element_write_intent_requires_cluster_admin_scope(self):
+        gates = required_gates("uat", "pe", "write")
+
+        self.assertIn("target_cluster_scope", gates)
+        self.assertIn("cluster_admin_scope", gates)
+
     def test_production_write_blocks_until_all_gates_are_satisfied(self):
         result = evaluate_environment_access(
             "production",

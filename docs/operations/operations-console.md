@@ -3,10 +3,10 @@
 `operations-console.html` is generated with every assessment. It is a local,
 dependency-free operator UI for the guided migration workflow:
 
-- Connect Environments: vCenter, Prism Central, Nutanix Move, ESXi, and
+- Connect Environments: vCenter, Prism Central, Prism Element, Nutanix Move, ESXi, and
   RVTools/import sources are presented as explicit local connection panels.
 - Environment Gates: operators select Dev, UAT, or Production, choose read or
-  write intent, select PC, Move, vCenter, or ESXi, and validate required gates
+  write intent, select PC, PE, Move, vCenter, or ESXi, and validate required gates
   before connector workflows proceed.
 - Run Compatibility Analysis: operators can filter workload readiness, risk,
   wave placement, Move action, and top findings from the embedded assessment.
@@ -37,10 +37,10 @@ The served console writes `console-state.json` in the configured data directory
 so operators can restart the console and still see redacted environment profile
 metadata, run history, connector capability metadata, and evidence paths. It
 does not persist credentials, usernames, endpoint values, tokens, or raw
-inventory in that state file. Live vCenter/Prism proof and approved Nutanix Move
-lab evidence remain explicit gates. Write mode is gate evaluation only; Nutanix
-Move, Prism Central, vCenter, or ESXi mutation is not enabled by this tester
-workflow.
+inventory in that state file. Live vCenter, Prism Central, Prism Element, and
+approved Nutanix Move lab evidence remain explicit gates. Write mode is gate
+evaluation only; Nutanix Move, Prism Central, Prism Element, vCenter, or ESXi
+mutation is not enabled by this tester workflow.
 
 Validate the generated console against `assessment.json`:
 

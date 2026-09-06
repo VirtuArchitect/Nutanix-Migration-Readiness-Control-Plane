@@ -1,6 +1,6 @@
 # Tester Alpha Release
 
-NMRCP `0.3.0-alpha.1` is the provider-aware tester-alpha release shape. The goal is to let an
+NMRCP `0.4.0-alpha.1` is the Nutanix DEV proof alpha release shape. The goal is to let an
 approved tester say:
 
 ```text
@@ -12,7 +12,7 @@ blockers matched my lab.
 ## What This Release Is For
 
 - Connect approved lab or customer environments from a local served console.
-- Test read-only vCenter and Prism Central reachability.
+- Test read-only vCenter, Prism Central, and Prism Element reachability.
 - Collect source inventory and target capacity evidence where approved.
 - Analyze AHV and NC2 readiness from collected or imported inventory.
 - Validate Dev, UAT, and Production gates before read or write-intent workflows.
@@ -33,13 +33,14 @@ blockers matched my lab.
 ## Connectivity Boundary
 
 The local served console and Docker console can initiate approved connectivity
-tests and read-only collection against vCenter and Prism Central. Nutanix Move,
-AHV, NC2, and ESXi workflows are represented through explicit environment
-gates, dry-run or proof capture, and evidence handoff boundaries until a
-connector-specific implementation is present and reviewed. The local state file
-does not make the product production-ready by itself; real endpoint proof,
-approved Move appliance proof, encrypted credential storage, and role-aware
-operator access remain the next production-hardening gates.
+tests and read-only collection against vCenter, Prism Central, and Prism
+Element. Nutanix Move, NC2, and ESXi workflows are represented through explicit
+environment gates, dry-run or proof capture, and evidence handoff boundaries
+until a connector-specific implementation is present and reviewed. The local
+state file does not make the product production-ready by itself; full
+VMware-to-Nutanix proof, approved Move appliance proof, encrypted credential
+storage, and role-aware operator access remain the next production-hardening
+gates.
 
 The static GitHub Pages demo cannot connect to infrastructure because it is a
 browser-only preview without the local API server.
@@ -50,9 +51,9 @@ browser-only preview without the local API server.
 2. Regenerate `docs/demo/operations-console.html`.
 3. Run compile, unit tests, security scan, Docker smoke, and local smoke.
 4. Confirm the direct demo URL serves the expected console version.
-5. Create a Git pre-release tag such as `v0.3.0-alpha.1`.
+5. Create a Git pre-release tag such as `v0.4.0-alpha.1`.
 6. Let the Docker publish workflow push:
-   `ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.3.0-alpha.1`.
+   `ghcr.io/virtuarchitect/nutanix-migration-readiness-control-plane:0.4.0-alpha.1`.
 7. Create a GitHub release with tester scope, known limits, security boundaries,
    and the direct console demo link.
 

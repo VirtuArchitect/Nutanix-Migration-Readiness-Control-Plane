@@ -3,26 +3,33 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from .connectors import EndpointConfig, PrismCentralClient, VCenterClient, endpoint_tls_mode
+from .connectors import EndpointConfig, PrismCentralClient, PrismElementClient, VCenterClient, endpoint_tls_mode
 
 
 def run_live_readiness(
     vcenter_config: EndpointConfig | None = None,
     prism_config: EndpointConfig | None = None,
+    prism_element_config: EndpointConfig | None = None,
     require_vcenter: bool = False,
     require_prism: bool = False,
+    require_prism_element: bool = False,
     prism_page_size: int = 100,
     prism_max_pages: int = 1,
+    skip_unconfigured_optional: bool = False,
 ) -> dict[str, Any]:
-    checks = [
-        check_vcenter(vcenter_config, require=require_vcenter),
-        check_prism(
-            prism_config,
-            require=require_prism,
-            page_size=prism_page_size,
-            max_pages=prism_max_pages,
+    checks = optional_checks(
+        (
+            check_vcenter(vcenter_config, require=require_vcenter),
+            check_prism(
+                prism_config,
+                require=require_prism,
+                page_size=prism_page_size,
+                max_pages=prism_max_pages,
+            ),
+            check_prism_element(prism_element_config, require=require_prism_element),
         ),
-    ]
+        skip_unconfigured_optional=skip_unconfigured_optional,
+    )
     status = "pass"
     if any(check["status"] == "fail" for check in checks):
         status = "fail"
@@ -41,6 +48,7 @@ def run_live_readiness(
             "tls_verification": {
                 "vcenter": endpoint_tls_mode(vcenter_config),
                 "prism-central": endpoint_tls_mode(prism_config),
+                "prism-element": endpoint_tls_mode(prism_element_config),
             },
         },
     }
@@ -64,6 +72,16 @@ def check_vcenter(config: EndpointConfig | None, require: bool = False) -> dict[
         }
     except Exception as exc:  # noqa: BLE001 - intentionally sanitized for operator evidence
         return failed_check("vcenter", exc, config)
+
+
+def optional_checks(checks: tuple[dict[str, Any], ...], *, skip_unconfigured_optional: bool) -> list[dict[str, Any]]:
+    if not skip_unconfigured_optional:
+        return list(checks)
+    return [
+        check
+        for check in checks
+        if not (check.get("status") == "warn" and check.get("configured") is False)
+    ]
 
 
 def check_prism(
@@ -92,6 +110,41 @@ def check_prism(
         }
     except Exception as exc:  # noqa: BLE001 - intentionally sanitized for operator evidence
         return failed_check("prism-central", exc, config)
+
+
+def check_prism_element(config: EndpointConfig | None, require: bool = False) -> dict[str, Any]:
+    if config is None:
+        return missing_check("prism-element", require)
+    try:
+        client = PrismElementClient(config)
+        cluster = client.get_cluster()
+        hosts = client.list_hosts()
+        storage_containers = client.list_storage_containers()
+        networks = client.list_networks()
+        vms = client.list_vms()
+        return {
+            "name": "prism-element",
+            "status": "pass",
+            "configured": True,
+            "authenticated": True,
+            "tls_verification": endpoint_tls_mode(config),
+            "read_only_calls": [
+                "/PrismGateway/services/rest/v2.0/cluster",
+                "/PrismGateway/services/rest/v2.0/hosts",
+                "/PrismGateway/services/rest/v2.0/storage_containers",
+                "/PrismGateway/services/rest/v2.0/networks",
+                "/PrismGateway/services/rest/v2.0/vms",
+            ],
+            "counts": {
+                "clusters": 1 if cluster else 0,
+                "hosts": len(hosts),
+                "storage_containers": len(storage_containers),
+                "networks": len(networks),
+                "vms": len(vms),
+            },
+        }
+    except Exception as exc:  # noqa: BLE001 - intentionally sanitized for operator evidence
+        return failed_check("prism-element", exc, config)
 
 
 def missing_check(name: str, require: bool) -> dict[str, Any]:

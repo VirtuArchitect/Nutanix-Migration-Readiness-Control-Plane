@@ -14,6 +14,7 @@ Supported environments:
 Supported targets:
 
 - `pc`: Prism Central
+- `pe`: Prism Element
 - `move`: Nutanix Move
 - `vcenter`: vCenter
 - `esxi`: ESXi
@@ -89,6 +90,7 @@ Environment-specific gates add stricter control:
 Target write gates add connector-specific scope:
 
 - Prism Central: `target_cluster_scope`
+- Prism Element: `target_cluster_scope`, `cluster_admin_scope`
 - Nutanix Move: `move_lab_or_approved_appliance`
 - vCenter: `vm_scope_approved`
 - ESXi: `host_scope_approved`
@@ -97,7 +99,7 @@ Target write gates add connector-specific scope:
 
 When served with `nmrcp serve`, the operations console exposes the same policy
 through **Validate Environment Gates**. Operators select Dev, UAT, or Production,
-choose read or write intent, select PC, Move, vCenter, or ESXi, and mark the
+choose read or write intent, select PC, PE, Move, vCenter, or ESXi, and mark the
 available gates. The console calls `/api/environment-access` and displays
 missing gates before any connector workflow is run.
 

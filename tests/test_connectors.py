@@ -1,7 +1,15 @@
 import unittest
 from unittest.mock import patch
 
-from nmrcp.connectors import EndpointConfig, PrismCentralClient, ReadOnlyHttpClient, VCenterClient, connector_capability_catalog, endpoint_tls_mode
+from nmrcp.connectors import (
+    EndpointConfig,
+    PrismCentralClient,
+    PrismElementClient,
+    ReadOnlyHttpClient,
+    VCenterClient,
+    connector_capability_catalog,
+    endpoint_tls_mode,
+)
 
 
 class ConnectorSafetyTests(unittest.TestCase):
@@ -33,8 +41,10 @@ class ConnectorSafetyTests(unittest.TestCase):
         self.assertEqual(catalog["schema_version"], "nmrcp_connector_capabilities_v1")
         self.assertIn("/api/vcenter/vm", connectors["vcenter"]["read_only_paths"])
         self.assertIn("/api/nutanix/v3/vms/list", connectors["prism-central"]["read_only_paths"])
+        self.assertIn("/PrismGateway/services/rest/v2.0/vms", connectors["prism-element"]["read_only_paths"])
         self.assertFalse(connectors["vcenter"]["write_enabled"])
         self.assertFalse(connectors["prism-central"]["write_enabled"])
+        self.assertFalse(connectors["prism-element"]["write_enabled"])
         self.assertEqual(connectors["nutanix-move"]["status"], "proof_required")
         self.assertEqual(catalog["mutation_policy"]["write_intent"], "environment_gate_only")
 
@@ -128,6 +138,35 @@ class ConnectorSafetyTests(unittest.TestCase):
             ],
         )
 
+    def test_prism_element_client_uses_read_only_v2_gets(self):
+        http = RecordingHttp(
+            request_responses=[
+                {"name": "dev-cluster"},
+                {"entities": [{"uuid": "host-1"}]},
+                {"entities": [{"name": "container-1"}]},
+                {"entities": [{"name": "net-1"}]},
+                {"entities": [{"uuid": "vm-1"}]},
+            ],
+        )
+        client = PrismElementClient(EndpointConfig("https://pe.example.test:9440", "admin", "secret"))
+        client.http = http
+
+        self.assertEqual(client.get_cluster()["name"], "dev-cluster")
+        self.assertEqual(client.list_hosts(), [{"uuid": "host-1"}])
+        self.assertEqual(client.list_storage_containers(), [{"name": "container-1"}])
+        self.assertEqual(client.list_networks(), [{"name": "net-1"}])
+        self.assertEqual(client.list_vms(), [{"uuid": "vm-1"}])
+        self.assertEqual(
+            http.request_calls,
+            [
+                ("GET", "/PrismGateway/services/rest/v2.0/cluster", {}),
+                ("GET", "/PrismGateway/services/rest/v2.0/hosts", {}),
+                ("GET", "/PrismGateway/services/rest/v2.0/storage_containers", {}),
+                ("GET", "/PrismGateway/services/rest/v2.0/networks", {}),
+                ("GET", "/PrismGateway/services/rest/v2.0/vms", {}),
+            ],
+        )
+
 
 class FakeResponse:
     def __init__(self, body: bytes):
@@ -157,6 +196,9 @@ class RecordingHttp:
     def post_json(self, path, payload=None):
         self.post_calls.append((path, payload or {}))
         return self.post_responses.pop(0)
+
+    def get_json(self, path):
+        return self.request_json("GET", path)
 
     def request_json(self, method, path, payload=None, headers=None):
         self.request_calls.append((method, path, headers or {}))

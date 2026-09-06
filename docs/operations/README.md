@@ -37,7 +37,7 @@ versioning expectations, see [tester-alpha-release.md](tester-alpha-release.md).
 
 Before read/write connector workflows, validate selected environment gates with
 [environment-access-gates.md](environment-access-gates.md). The gate supports
-Dev, UAT, and Production profiles for PC, Move, vCenter, and ESXi targets.
+Dev, UAT, and Production profiles for PC, PE, Move, vCenter, and ESXi targets.
 
 Before collection or offline import, generate and validate a customer or partner
 assessment intake:

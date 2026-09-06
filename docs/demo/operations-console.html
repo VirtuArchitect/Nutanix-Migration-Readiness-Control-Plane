@@ -454,7 +454,7 @@
         <a href="#plan">Build Move Plan</a>
         <a href="#workbench">Operator Workbench</a>
       </div>
-      <div class="rail-status"><strong>Provider Pair</strong>VMware vCenter -> Nutanix AHV<br>Version 0.3.0-alpha.1. Environment connections are local-only and require explicit operator approval.</div>
+      <div class="rail-status"><strong>Provider Pair</strong>VMware vCenter -> Nutanix AHV<br>Version 0.4.0-alpha.1. Environment connections are local-only and require explicit operator approval.</div>
     </nav>
     <main>
       <header>
@@ -469,7 +469,7 @@
         <section class="ops-ribbon" aria-label="Operations context">
           <div><span>Identity</span><strong>MRCP Console</strong></div>
           <div><span>Edition</span><strong>Nutanix Provider Edition</strong></div>
-          <div><span>Version</span><strong>0.3.0-alpha.1</strong></div>
+          <div><span>Version</span><strong>0.4.0-alpha.1</strong></div>
           <div><span>Mode</span><strong>Local-first evidence workflow</strong></div>
           <div><span>Boundary</span><strong>Write intent is gated, not executed</strong></div>
         </section>
@@ -509,6 +509,16 @@
         <label>Timeout seconds<input data-field="timeout" type="number" min="1" value="20"></label>
         <p class="meta">Status: <span data-status>Not configured</span></p>
       </article>
+                  <article class="connection" data-connection="prism-element">
+        <h3>Prism Element</h3>
+        <p class="muted">Read-only AHV cluster, host, storage, network, and VM context.</p>
+        <label>Endpoint<input data-field="endpoint" type="text" autocomplete="off" placeholder="Approved endpoint URL"></label>
+        <label>Username<input data-field="username" type="text" autocomplete="username" placeholder="Read-only account"></label>
+        <label>Password<input data-field="credential" type="password" autocomplete="current-password" placeholder="Request-only credential"></label>
+        <label>TLS verification<input data-field="verify_tls" type="checkbox" checked></label>
+        <label>Timeout seconds<input data-field="timeout" type="number" min="1" value="20"></label>
+        <p class="meta">Status: <span data-status>Not configured</span></p>
+      </article>
                   <article class="connection" data-connection="move">
         <h3>Nutanix Move</h3>
         <p class="muted">Approved lab-only payload review and dry-run proof capture.</p>
@@ -539,7 +549,7 @@
             <div class="filters" aria-label="Environment gates">
               <label>Environment<select id="environment-select"><option value="dev">Dev</option><option value="uat">UAT</option><option value="production">Production</option></select></label>
               <label>Mode<select id="mode-select"><option value="read">Read</option><option value="write">Write intent</option></select></label>
-              <label>Target<select id="target-select"><option value="pc">Prism Central</option><option value="move">Nutanix Move</option><option value="vcenter">vCenter</option><option value="esxi">ESXi</option></select></label>
+              <label>Target<select id="target-select"><option value="pc">Prism Central</option><option value="pe">Prism Element</option><option value="move">Nutanix Move</option><option value="vcenter">vCenter</option><option value="esxi">ESXi</option></select></label>
             </div>
             <div class="gate-grid" aria-label="Required environment gates">
               <label><input type="checkbox" data-gate="source_scope_approved">Source scope approved</label>
@@ -555,6 +565,7 @@
               <label><input type="checkbox" data-gate="backup_verified">Backup verified</label>
               <label><input type="checkbox" data-gate="production_write_break_glass">Production write break-glass</label>
               <label><input type="checkbox" data-gate="target_cluster_scope">Target cluster scope</label>
+              <label><input type="checkbox" data-gate="cluster_admin_scope">Cluster admin scope</label>
               <label><input type="checkbox" data-gate="move_lab_or_approved_appliance">Move lab/appliance scope</label>
               <label><input type="checkbox" data-gate="vm_scope_approved">VM scope approved</label>
               <label><input type="checkbox" data-gate="host_scope_approved">Host scope approved</label>
@@ -598,8 +609,8 @@
           <aside class="panel" id="workbench">
             <h2>Operator Workbench</h2>
             <ol class="steps">
-              <li><strong>1. Select environment</strong><br><span class="muted">Choose Dev, UAT, or Production and validate read/write gates for PC, Move, vCenter, or ESXi.</span></li>
-              <li><strong>2. Connect source</strong><br><span class="muted">Validate vCenter and Prism Central with read-only proof.</span></li>
+              <li><strong>1. Select environment</strong><br><span class="muted">Choose Dev, UAT, or Production and validate read/write gates for PC, PE, Move, vCenter, or ESXi.</span></li>
+              <li><strong>2. Connect source</strong><br><span class="muted">Validate vCenter, Prism Central, and Prism Element with read-only proof.</span></li>
               <li><strong>3. Discover inventory</strong><br><span class="muted">Collect or import source workload, network, storage, and ownership data.</span></li>
               <li><strong>4. Analyze compatibility</strong><br><span class="muted">Review AHV/NC2 readiness, dependencies, blockers, and what-will-break evidence.</span></li>
               <li id="plan"><strong>5. Build Move Plan</strong><br><span class="muted">Stage only ready/research workloads into the Move plan after review.</span></li>
@@ -613,7 +624,7 @@
       </section>
     </main>
   </div>
-  <script id="operations-console-data" type="application/json">{&quot;schema_version&quot;:&quot;nmrcp_operations_console_v1&quot;,&quot;product_version&quot;:&quot;0.3.0-alpha.1&quot;,&quot;provider_catalog&quot;:{&quot;sources&quot;:[{&quot;id&quot;:&quot;vmware_vcenter&quot;,&quot;label&quot;:&quot;VMware vCenter&quot;,&quot;collector&quot;:&quot;read-only vCenter inventory collector&quot;,&quot;status&quot;:&quot;validated&quot;},{&quot;id&quot;:&quot;rvtools_import&quot;,&quot;label&quot;:&quot;RVTools / Offline Import&quot;,&quot;collector&quot;:&quot;offline CSV/JSON import&quot;,&quot;status&quot;:&quot;validated&quot;}],&quot;targets&quot;:[{&quot;id&quot;:&quot;nutanix_ahv&quot;,&quot;label&quot;:&quot;Nutanix AHV&quot;,&quot;profile&quot;:&quot;Nutanix AHV readiness profile&quot;,&quot;status&quot;:&quot;validated&quot;},{&quot;id&quot;:&quot;nutanix_nc2&quot;,&quot;label&quot;:&quot;Nutanix NC2&quot;,&quot;profile&quot;:&quot;Nutanix NC2 readiness profile&quot;,&quot;status&quot;:&quot;validated&quot;}],&quot;pairs&quot;:[{&quot;id&quot;:&quot;vmware_vcenter-&gt;nutanix_ahv&quot;,&quot;source&quot;:&quot;vmware_vcenter&quot;,&quot;target&quot;:&quot;nutanix_ahv&quot;,&quot;rule_set&quot;:&quot;vmware_to_nutanix_ahv&quot;,&quot;status&quot;:&quot;validated&quot;},{&quot;id&quot;:&quot;vmware_vcenter-&gt;nutanix_nc2&quot;,&quot;source&quot;:&quot;vmware_vcenter&quot;,&quot;target&quot;:&quot;nutanix_nc2&quot;,&quot;rule_set&quot;:&quot;vmware_to_nutanix_nc2&quot;,&quot;status&quot;:&quot;validated&quot;},{&quot;id&quot;:&quot;rvtools_import-&gt;nutanix_ahv&quot;,&quot;source&quot;:&quot;rvtools_import&quot;,&quot;target&quot;:&quot;nutanix_ahv&quot;,&quot;rule_set&quot;:&quot;rvtools_to_nutanix_ahv&quot;,&quot;status&quot;:&quot;validated&quot;},{&quot;id&quot;:&quot;rvtools_import-&gt;nutanix_nc2&quot;,&quot;source&quot;:&quot;rvtools_import&quot;,&quot;target&quot;:&quot;nutanix_nc2&quot;,&quot;rule_set&quot;:&quot;rvtools_to_nutanix_nc2&quot;,&quot;status&quot;:&quot;validated&quot;}]},&quot;provider_pair&quot;:{&quot;source&quot;:&quot;vmware_vcenter&quot;,&quot;source_label&quot;:&quot;VMware vCenter&quot;,&quot;source_status&quot;:&quot;validated&quot;,&quot;target&quot;:&quot;nutanix_ahv&quot;,&quot;target_label&quot;:&quot;Nutanix AHV&quot;,&quot;rule_set&quot;:&quot;vmware_to_nutanix_ahv&quot;,&quot;rule_set_label&quot;:&quot;VMware vCenter -&gt; Nutanix AHV&quot;},&quot;summary&quot;:{&quot;ready&quot;:1,&quot;research&quot;:0,&quot;prepare&quot;:0,&quot;blocked&quot;:2,&quot;total&quot;:3},&quot;connections&quot;:[{&quot;id&quot;:&quot;vcenter&quot;,&quot;label&quot;:&quot;vCenter&quot;,&quot;mode&quot;:&quot;read-only&quot;,&quot;status&quot;:&quot;not_configured&quot;},{&quot;id&quot;:&quot;prism&quot;,&quot;label&quot;:&quot;Prism Central&quot;,&quot;mode&quot;:&quot;read-only&quot;,&quot;status&quot;:&quot;not_configured&quot;},{&quot;id&quot;:&quot;move&quot;,&quot;label&quot;:&quot;Nutanix Move&quot;,&quot;mode&quot;:&quot;approved_lab_only&quot;,&quot;status&quot;:&quot;proof_required&quot;},{&quot;id&quot;:&quot;import&quot;,&quot;label&quot;:&quot;RVTools / Import&quot;,&quot;mode&quot;:&quot;offline&quot;,&quot;status&quot;:&quot;available&quot;}],&quot;waves&quot;:[{&quot;name&quot;:&quot;Wave 0 - Pilot Ready&quot;,&quot;workload_count&quot;:1},{&quot;name&quot;:&quot;Excluded Until Cleared&quot;,&quot;workload_count&quot;:2}],&quot;workloads&quot;:[{&quot;id&quot;:&quot;vm-1001&quot;,&quot;name&quot;:&quot;pilot-web-01&quot;,&quot;owner&quot;:&quot;Platform Team&quot;,&quot;readiness&quot;:&quot;ready&quot;,&quot;risk_score&quot;:0,&quot;wave&quot;:&quot;Wave 0 - Pilot Ready&quot;,&quot;move_action&quot;:&quot;stage after review&quot;,&quot;top_finding&quot;:&quot;No open finding&quot;},{&quot;id&quot;:&quot;vm-2020&quot;,&quot;name&quot;:&quot;erp-app-01&quot;,&quot;owner&quot;:&quot;Business Apps&quot;,&quot;readiness&quot;:&quot;blocked&quot;,&quot;risk_score&quot;:80,&quot;wave&quot;:&quot;Excluded Until Cleared&quot;,&quot;move_action&quot;:&quot;hold until remediated&quot;,&quot;top_finding&quot;:&quot;Workload uses a VMware distributed switch backed port group.&quot;},{&quot;id&quot;:&quot;vm-3030&quot;,&quot;name&quot;:&quot;payments-edge-01&quot;,&quot;owner&quot;:&quot;Payments&quot;,&quot;readiness&quot;:&quot;blocked&quot;,&quot;risk_score&quot;:100,&quot;wave&quot;:&quot;Excluded Until Cleared&quot;,&quot;move_action&quot;:&quot;hold until remediated&quot;,&quot;top_finding&quot;:&quot;Guest OS is not in the current known-good family list.&quot;}],&quot;source&quot;:{&quot;system&quot;:&quot;sanitized-vcenter-export&quot;,&quot;workloads&quot;:3}}</script>
+  <script id="operations-console-data" type="application/json">{&quot;schema_version&quot;:&quot;nmrcp_operations_console_v1&quot;,&quot;product_version&quot;:&quot;0.4.0-alpha.1&quot;,&quot;provider_catalog&quot;:{&quot;sources&quot;:[{&quot;id&quot;:&quot;vmware_vcenter&quot;,&quot;label&quot;:&quot;VMware vCenter&quot;,&quot;collector&quot;:&quot;read-only vCenter inventory collector&quot;,&quot;status&quot;:&quot;validated&quot;},{&quot;id&quot;:&quot;rvtools_import&quot;,&quot;label&quot;:&quot;RVTools / Offline Import&quot;,&quot;collector&quot;:&quot;offline CSV/JSON import&quot;,&quot;status&quot;:&quot;validated&quot;}],&quot;targets&quot;:[{&quot;id&quot;:&quot;nutanix_ahv&quot;,&quot;label&quot;:&quot;Nutanix AHV&quot;,&quot;profile&quot;:&quot;Nutanix AHV readiness profile&quot;,&quot;status&quot;:&quot;validated&quot;},{&quot;id&quot;:&quot;nutanix_nc2&quot;,&quot;label&quot;:&quot;Nutanix NC2&quot;,&quot;profile&quot;:&quot;Nutanix NC2 readiness profile&quot;,&quot;status&quot;:&quot;validated&quot;}],&quot;pairs&quot;:[{&quot;id&quot;:&quot;vmware_vcenter-&gt;nutanix_ahv&quot;,&quot;source&quot;:&quot;vmware_vcenter&quot;,&quot;target&quot;:&quot;nutanix_ahv&quot;,&quot;rule_set&quot;:&quot;vmware_to_nutanix_ahv&quot;,&quot;status&quot;:&quot;validated&quot;},{&quot;id&quot;:&quot;vmware_vcenter-&gt;nutanix_nc2&quot;,&quot;source&quot;:&quot;vmware_vcenter&quot;,&quot;target&quot;:&quot;nutanix_nc2&quot;,&quot;rule_set&quot;:&quot;vmware_to_nutanix_nc2&quot;,&quot;status&quot;:&quot;validated&quot;},{&quot;id&quot;:&quot;rvtools_import-&gt;nutanix_ahv&quot;,&quot;source&quot;:&quot;rvtools_import&quot;,&quot;target&quot;:&quot;nutanix_ahv&quot;,&quot;rule_set&quot;:&quot;rvtools_to_nutanix_ahv&quot;,&quot;status&quot;:&quot;validated&quot;},{&quot;id&quot;:&quot;rvtools_import-&gt;nutanix_nc2&quot;,&quot;source&quot;:&quot;rvtools_import&quot;,&quot;target&quot;:&quot;nutanix_nc2&quot;,&quot;rule_set&quot;:&quot;rvtools_to_nutanix_nc2&quot;,&quot;status&quot;:&quot;validated&quot;}]},&quot;provider_pair&quot;:{&quot;source&quot;:&quot;vmware_vcenter&quot;,&quot;source_label&quot;:&quot;VMware vCenter&quot;,&quot;source_status&quot;:&quot;validated&quot;,&quot;target&quot;:&quot;nutanix_ahv&quot;,&quot;target_label&quot;:&quot;Nutanix AHV&quot;,&quot;rule_set&quot;:&quot;vmware_to_nutanix_ahv&quot;,&quot;rule_set_label&quot;:&quot;VMware vCenter -&gt; Nutanix AHV&quot;},&quot;summary&quot;:{&quot;ready&quot;:1,&quot;research&quot;:0,&quot;prepare&quot;:0,&quot;blocked&quot;:2,&quot;total&quot;:3},&quot;connections&quot;:[{&quot;id&quot;:&quot;vcenter&quot;,&quot;label&quot;:&quot;vCenter&quot;,&quot;mode&quot;:&quot;read-only&quot;,&quot;status&quot;:&quot;not_configured&quot;},{&quot;id&quot;:&quot;prism&quot;,&quot;label&quot;:&quot;Prism Central&quot;,&quot;mode&quot;:&quot;read-only&quot;,&quot;status&quot;:&quot;not_configured&quot;},{&quot;id&quot;:&quot;prism-element&quot;,&quot;label&quot;:&quot;Prism Element&quot;,&quot;mode&quot;:&quot;read-only&quot;,&quot;status&quot;:&quot;not_configured&quot;},{&quot;id&quot;:&quot;move&quot;,&quot;label&quot;:&quot;Nutanix Move&quot;,&quot;mode&quot;:&quot;approved_lab_only&quot;,&quot;status&quot;:&quot;proof_required&quot;},{&quot;id&quot;:&quot;esxi&quot;,&quot;label&quot;:&quot;ESXi&quot;,&quot;mode&quot;:&quot;gate-only&quot;,&quot;status&quot;:&quot;gate_only&quot;},{&quot;id&quot;:&quot;import&quot;,&quot;label&quot;:&quot;RVTools / Import&quot;,&quot;mode&quot;:&quot;offline&quot;,&quot;status&quot;:&quot;available&quot;}],&quot;waves&quot;:[{&quot;name&quot;:&quot;Wave 0 - Pilot Ready&quot;,&quot;workload_count&quot;:1},{&quot;name&quot;:&quot;Excluded Until Cleared&quot;,&quot;workload_count&quot;:2}],&quot;workloads&quot;:[{&quot;id&quot;:&quot;vm-1001&quot;,&quot;name&quot;:&quot;pilot-web-01&quot;,&quot;owner&quot;:&quot;Platform Team&quot;,&quot;readiness&quot;:&quot;ready&quot;,&quot;risk_score&quot;:0,&quot;wave&quot;:&quot;Wave 0 - Pilot Ready&quot;,&quot;move_action&quot;:&quot;stage after review&quot;,&quot;top_finding&quot;:&quot;No open finding&quot;},{&quot;id&quot;:&quot;vm-2020&quot;,&quot;name&quot;:&quot;erp-app-01&quot;,&quot;owner&quot;:&quot;Business Apps&quot;,&quot;readiness&quot;:&quot;blocked&quot;,&quot;risk_score&quot;:80,&quot;wave&quot;:&quot;Excluded Until Cleared&quot;,&quot;move_action&quot;:&quot;hold until remediated&quot;,&quot;top_finding&quot;:&quot;Workload uses a VMware distributed switch backed port group.&quot;},{&quot;id&quot;:&quot;vm-3030&quot;,&quot;name&quot;:&quot;payments-edge-01&quot;,&quot;owner&quot;:&quot;Payments&quot;,&quot;readiness&quot;:&quot;blocked&quot;,&quot;risk_score&quot;:100,&quot;wave&quot;:&quot;Excluded Until Cleared&quot;,&quot;move_action&quot;:&quot;hold until remediated&quot;,&quot;top_finding&quot;:&quot;Guest OS is not in the current known-good family list.&quot;}],&quot;source&quot;:{&quot;system&quot;:&quot;sanitized-vcenter-export&quot;,&quot;workloads&quot;:3}}</script>
   <script>
     const payload = JSON.parse(document.getElementById("operations-console-data").textContent);
     const rows = Array.from(document.querySelectorAll("#workload-rows tr"));
@@ -668,6 +679,11 @@
     function setProof(message) {
       document.getElementById("api-proof").textContent = message;
     }
+    function connectionIdForCheck(name) {
+      if (name === "prism-central") return "prism";
+      if (name === "prism-element") return "prism-element";
+      return name;
+    }
     async function postJson(path, body) {
       setProof(`Running ${path}...`);
       const response = await fetch(path, {
@@ -720,11 +736,13 @@
       const result = await postJson("/api/connection-test", {
         vcenter: endpointPayload("vcenter"),
         prism: endpointPayload("prism"),
+        prism_element: endpointPayload("prism-element"),
         require_vcenter: true,
-        require_prism: true
+        require_prism: true,
+        require_prism_element: true
       });
       for (const check of result.result.checks || []) {
-        const status = document.querySelector(`[data-connection="${check.name === "prism-central" ? "prism" : check.name}"] [data-status]`);
+        const status = document.querySelector(`[data-connection="${connectionIdForCheck(check.name)}"] [data-status]`);
         if (status) status.textContent = check.status;
       }
       updateStateSummary(await getJson("/api/state"));

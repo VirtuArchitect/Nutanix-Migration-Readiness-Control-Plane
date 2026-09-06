@@ -53,6 +53,21 @@ python -m nmrcp.cli validate-live-proof `
   --out outputs\source-collection\live-proof-validation.json
 ```
 
+For a Nutanix-only DEV proof before vCenter is approved, validate the
+Prism Central and Prism Element readiness proof without weakening the full
+external handoff gate:
+
+```powershell
+python -m nmrcp.cli validate-live-proof `
+  --live-readiness outputs\nutanix-dev-live-readiness.json `
+  --nutanix-only `
+  --out outputs\nutanix-dev-live-proof-validation.json
+```
+
+The Nutanix-only mode proves real DEV PC/PE reachability, read-only calls,
+redaction, and mutation safety. It does not satisfy the full VMware-to-Nutanix
+external proof requirement because vCenter collection remains out of scope.
+
 Then pass the validated proof into the MVP audit:
 
 ```powershell

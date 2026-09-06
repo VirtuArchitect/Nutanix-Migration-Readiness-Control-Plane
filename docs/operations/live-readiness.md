@@ -1,9 +1,9 @@
 # Live Readiness Proof
 
 `live-readiness` runs a redacted, read-only reachability check for configured
-vCenter and Prism Central endpoints. It is intended to prove that collection can
-start without writing credentials, endpoint URLs, usernames, or inventory
-details into the proof file.
+vCenter, Prism Central, and Prism Element endpoints. It is intended to prove
+that collection can start without writing credentials, endpoint URLs, usernames,
+or inventory details into the proof file.
 
 ## Environment
 
@@ -15,6 +15,9 @@ $env:NMRCP_VCENTER_PASSWORD = "<local secret>"
 $env:NMRCP_PRISM_URL = "https://prism-central.example.com:9440"
 $env:NMRCP_PRISM_USERNAME = "admin"
 $env:NMRCP_PRISM_PASSWORD = "<local secret>"
+$env:NMRCP_PRISM_ELEMENT_URL = "https://prism-element.example.com:9440"
+$env:NMRCP_PRISM_ELEMENT_USERNAME = "admin"
+$env:NMRCP_PRISM_ELEMENT_PASSWORD = "<local secret>"
 ```
 
 ## Run
@@ -30,14 +33,32 @@ or partner team starts collection:
 python -m nmrcp.cli live-readiness `
   --require-vcenter `
   --require-prism `
+  --require-prism-element `
   --out outputs\live-readiness.json
 ```
+
+Use Nutanix-only DEV proof mode when Prism Central and Prism Element are in
+scope but vCenter is not approved yet:
+
+```powershell
+python -m nmrcp.cli live-readiness `
+  --require-prism `
+  --require-prism-element `
+  --skip-unconfigured-optional `
+  --insecure `
+  --out outputs\nutanix-dev-live-readiness.json
+```
+
+This produces a real Nutanix DEV proof without claiming that VMware source
+connectivity has been proven.
 
 ## What It Checks
 
 - vCenter: `/api/session` plus `/api/vcenter/vm`.
 - Prism Central: `/api/nutanix/v3/clusters/list` plus
   `/api/nutanix/v3/vms/list`.
+- Prism Element: `/PrismGateway/services/rest/v2.0/cluster`, `/hosts`,
+  `/storage_containers`, `/networks`, and `/vms`.
 
 The output records schema `nmrcp_live_readiness_v1`, endpoint status, read-only
 call names, and object counts. Missing optional endpoints return `warn` and exit
@@ -54,8 +75,8 @@ successfully; required missing or failed endpoints return `fail`.
   explicit review item before relying on live collection evidence.
 - The command does not write inventory artifacts.
 - Prism POST calls remain limited to allow-listed read-only list endpoints.
-- No mutation against vCenter, Prism Central, AHV, NC2, or Nutanix Move is
-  possible through this command.
+- No mutation against vCenter, Prism Central, Prism Element, AHV, NC2, or
+  Nutanix Move is possible through this command.
 
 ## Connector Contract Coverage
 
@@ -69,6 +90,8 @@ endpoints:
   session header.
 - Prism VM inventory pagination advances offsets and stops at the reported
   total.
+- Prism Element proof uses GET calls for cluster, host, storage container,
+  network, and VM context.
 - raw HTTP requests carry JSON `Accept`/`Content-Type` headers and configured
   timeouts.
 

@@ -78,7 +78,14 @@ class ConsoleServerTests(unittest.TestCase):
                             "username": "local-user",
                             "password": "super-secret",
                             "verify_tls": True,
-                        }
+                        },
+                        "prism_element": {
+                            "endpoint": "http://127.0.0.1:2",
+                            "username": "local-pe-user",
+                            "password": "pe-super-secret",
+                            "verify_tls": True,
+                        },
+                        "require_prism_element": True,
                     }
                 ).encode("utf-8")
                 with patch(
@@ -86,10 +93,13 @@ class ConsoleServerTests(unittest.TestCase):
                     return_value={
                         "schema_version": "nmrcp_live_readiness_v1",
                         "status": "pass",
-                        "checks": [{"name": "vcenter", "status": "pass", "counts": {"vms": 2}}],
+                        "checks": [
+                            {"name": "vcenter", "status": "pass", "counts": {"vms": 2}},
+                            {"name": "prism-element", "status": "pass", "counts": {"hosts": 1, "vms": 1}},
+                        ],
                         "security": {"credentials_serialized": False, "endpoint_values_serialized": False},
                     },
-                ):
+                ) as readiness:
                     request = Request(
                         f"http://127.0.0.1:{server.server_address[1]}/api/connection-test",
                         data=body,
@@ -104,9 +114,13 @@ class ConsoleServerTests(unittest.TestCase):
 
             serialized = json.dumps(payload) + (data_dir / "live-readiness.json").read_text(encoding="utf-8")
             self.assertEqual(payload["status"], "pass")
+            self.assertTrue(readiness.call_args.kwargs["prism_element_config"])
+            self.assertTrue(readiness.call_args.kwargs["require_prism_element"])
             self.assertTrue((data_dir / "live-readiness.json").exists())
             self.assertNotIn("super-secret", serialized)
+            self.assertNotIn("pe-super-secret", serialized)
             self.assertNotIn("local-user", serialized)
+            self.assertNotIn("local-pe-user", serialized)
 
     def test_run_readiness_api_writes_assessment_and_refreshes_console(self):
         with tempfile.TemporaryDirectory() as tmp:
