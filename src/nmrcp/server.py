@@ -169,6 +169,7 @@ def api_connection_test(payload: dict[str, Any], data_dir: Path) -> dict[str, An
         require_vcenter=bool(payload.get("require_vcenter")),
         require_prism=bool(payload.get("require_prism")),
         require_prism_element=bool(payload.get("require_prism_element")),
+        skip_unconfigured_optional=bool(payload.get("skip_unconfigured_optional")),
     )
     data_dir.mkdir(parents=True, exist_ok=True)
     proof_path = data_dir / "live-readiness.json"
