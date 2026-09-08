@@ -86,6 +86,7 @@ class ConsoleServerTests(unittest.TestCase):
                             "verify_tls": True,
                         },
                         "require_prism_element": True,
+                        "skip_unconfigured_optional": True,
                     }
                 ).encode("utf-8")
                 with patch(
@@ -116,6 +117,7 @@ class ConsoleServerTests(unittest.TestCase):
             self.assertEqual(payload["status"], "pass")
             self.assertTrue(readiness.call_args.kwargs["prism_element_config"])
             self.assertTrue(readiness.call_args.kwargs["require_prism_element"])
+            self.assertTrue(readiness.call_args.kwargs["skip_unconfigured_optional"])
             self.assertTrue((data_dir / "live-readiness.json").exists())
             self.assertNotIn("super-secret", serialized)
             self.assertNotIn("pe-super-secret", serialized)

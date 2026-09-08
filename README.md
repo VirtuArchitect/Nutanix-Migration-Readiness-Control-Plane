@@ -33,6 +33,28 @@ environment, run the local served console through Docker or Python. That served
 console exposes the connection, collection, readiness, tester-report, and
 environment-gate APIs used by the UI.
 
+The console is shaped as an operator workbench rather than a report viewer. It
+includes clear navigation for Operations Dashboard, Connect Environments,
+Environment Profiles, Connector Policies, Run Compatibility Analysis, Settings,
+Users & RBAC, and Audit & State. Each menu item opens as its own console page
+instead of jumping down a long document, and the NMRCP logo badge returns to the
+main Operations Dashboard. Operators can add, edit, and delete local connector
+records, test supported connectors for connectivity, manage local users and
+roles, create migration plans, and generate non-mutating dry-run payloads from
+the current assessment. The Operator Workbench explains each step with where to
+configure it, what to run, and what output proves success. Connector results use
+operator-friendly green `PASS`,
+red `FAILED`, and amber preflight badges, with detailed evidence below the
+badge. Console outputs lead with short operator summaries, next steps, evidence
+paths, and a clear statement when no infrastructure changes were made; raw
+schemas and commands are kept as secondary evidence. vCenter, Prism Central,
+and Prism Element tests call the local read-only connection API when the console
+is served through Docker or Python. Move, ESXi, and import connectors show an
+explicit browser-only preflight until authoritative backend adapters are
+implemented. The current alpha RBAC view documents the local operator roles and
+duties; future authenticated deployments should enforce that model through an
+identity provider or appliance control plane.
+
 ## Docker Console
 
 Run the local operations console in Docker:
@@ -44,9 +66,10 @@ docker compose up --build
 Then open `http://localhost:8080/`. The container serves the same local-first
 console and health endpoint without contacting infrastructure by itself. After
 an operator enters approved runtime connection details, testers can use the
-browser to test approved read-only vCenter, Prism Central, and Prism Element connections,
-collect local source evidence, run readiness against collected inventory, and
-validate read/write-intent gates for PC, PE, Move, vCenter, ESXi, AHV, NC2, and
+browser to test approved read-only vCenter, Prism Central, and Prism Element
+connections one connector at a time or as a grouped readiness check, collect
+local source evidence, run readiness against collected inventory, and validate
+read/write-intent gates for PC, PE, Move, vCenter, ESXi, AHV, NC2, and
 environment-specific workflows. See `docs/operations/docker.md`,
 `docs/operations/tester-quickstart.md`, and
 `docs/operations/tester-alpha-release.md`.
